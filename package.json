@@ -7,6 +7,7 @@
     "test": "mocha --require ./resources/mocha-require.js --timeout 20000 ./src/**/__tests__/*-test.js",
     "build": "babel --ignore *-test.js -d lib src",
     "clean": "rimraf lib",
+    "lint": "eslint src",
     "prepublish": "npm run clean && npm run build"
   },
   "repository": {
@@ -25,14 +26,18 @@
   "homepage": "https://github.com/ironhee/nothinkdb#readme",
   "devDependencies": {
     "babel": "^5.8.35",
+    "babel-eslint": "^4.1.7",
     "chai": "^3.4.1",
     "chai-as-promised": "^5.2.0",
     "eslint": "^1.10.3",
     "eslint-config-airbnb": "^0.1.0",
+    "mocha": "^2.4.5",
     "rimraf": "^2.5.1"
   },
   "dependencies": {
+    "joi": "^7.2.3",
     "lodash": "^4.0.0",
+    "node-uuid": "^1.4.7",
     "rethinkdb": "^2.2.1"
   }
 }
