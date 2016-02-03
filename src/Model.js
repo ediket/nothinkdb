@@ -1,4 +1,3 @@
-import Joi from 'joi';
 import assert from 'assert';
 import Table from './Table';
 import Link from './Link';
@@ -24,32 +23,33 @@ export default class Model extends Table {
 
   static hasOne(as, link) {
     assert.equal(link.constructor, Link);
+    assert.equal(link.linkee.Table, this);
     this.addRelation(as, { link, type: HAS_ONE });
   }
 
   static belongsTo(as, link) {
     assert.equal(link.constructor, Link);
+    assert.equal(link.linker.Table, this);
     this.addRelation(as, { link, type: BELONGS_TO });
   }
 
   static hasMany(as, link) {
     assert.equal(link.constructor, Link);
+    assert.equal(link.linkee.Table, this);
     this.addRelation(as, { link, type: HAS_MANY });
   }
 
-  static belongsToMany(as, links = []) {
-    assert.equal(links.length, 2);
-    assert.equal(links[0].constructor, Link);
-    assert.equal(links[1].constructor, Link);
-    this.addRelation(as, { links, type: BELONGS_TO_MANY });
+  static belongsToMany(as, link) {
+    assert.equal(link.length, 2);
+    assert.equal(link[0].constructor, Link);
+    assert.equal(link[1].constructor, Link);
+    assert.equal(link[0].linkee.Table, this);
+    assert.equal(link[0].linker.Table, link[1].linker.Table);
+    this.addRelation(as, { link, type: BELONGS_TO_MANY });
   }
 
   constructor(data = {}, isSynced = false) {
     super(data);
     this.isSynced = isSynced;
-  }
-
-  attempt() {
-    this.data = Joi.attempt(this.data, this.constructor.schema());
   }
 }

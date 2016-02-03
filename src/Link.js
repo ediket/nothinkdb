@@ -3,7 +3,10 @@ import assert from 'assert';
 
 export default class Link {
   static validateLinkData(linkData) {
-    return !!(linkData && linkData.Table && linkData.key);
+    return linkData &&
+      linkData.Table &&
+      linkData.key &&
+      linkData.Table.hasColumn(linkData.key);
   }
 
   static assertLinkData(linkData) {
@@ -14,7 +17,7 @@ export default class Link {
     const { linker, linkee } = options;
     Link.assertLinkData(linker);
     Link.assertLinkData(linkee);
-    linker.Table.assertColumn(linker.key);
-    linkee.Table.assertColumn(linkee.key);
+    this.linker = linker;
+    this.linkee = linkee;
   }
 }

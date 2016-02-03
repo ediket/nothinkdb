@@ -1,8 +1,8 @@
-import r from 'rethinkdb';
 import Joi from 'joi';
 import _ from 'lodash';
 import assert from 'assert';
 import uuid from 'node-uuid';
+import Link from './Link';
 
 
 export default class Table {
@@ -10,39 +10,51 @@ export default class Table {
   static pk = 'id';
 
   static schema = () => ({
-    id: Joi.string().max(32).default(() => uuid.v4(), 'primary key'),
+    id: Joi.string().max(32).default(() => uuid.v4(), 'primary key').meta({ index: true }),
     createdAt: Joi.date().default(() => new Date(), 'time of creation'),
     updatedAt: Joi.date().default(() => new Date(), 'time of updated'),
   });
 
-  static hasColumn(column) {
-    return this.schema()[column];
+  static validate(data = null) {
+    return !Joi.validate(data, this.schema()).error;
   }
 
-  static assertColumn(column) {
-    return assert.ok(this.hasColumn(column), `Column '${column}' is unspecified in table '${this.table}'.`);
+  static attempt(data = null) {
+    return Joi.attempt(data, this.schema());
   }
 
-  static getForeignKey(targetKey = this.pk, options = {}) {
-    this.assertColumn(targetKey);
-    const { isManyToMany = false } = options;
+  static hasColumn(columnName) {
+    return _.has(this.schema(), columnName);
+  }
+
+  static assertColumn(columnName) {
+    return assert.ok(this.hasColumn(columnName), `Column '${columnName}' is unspecified in table '${this.table}'.`);
+  }
+
+  static getColumn(columnName) {
+    this.assertColumn(columnName);
+    return this.schema()[columnName];
+  }
+
+  static getForeignKey(options = {}) {
+    const { columnName = this.pk, isManyToMany = false } = options;
+    const column = this.getColumn(columnName);
 
     if (isManyToMany) {
-      return this.schema()[this.pk].required();
+      return column.required();
     }
-    return this.schema()[this.pk].default(null);
+    return column.default(null);
   }
 
-  static async sync(connection) {
-    await this.ensureTable(connection);
+  static linkTo(OtherTable, foreignKey, targetKey = OtherTable.pk) {
+    return new Link({
+      linker: { Table: this, key: foreignKey },
+      linkee: { Table: OtherTable, key: targetKey },
+    });
   }
 
-  static async ensureTable(connection) {
-    return await r.branch(
-      r.tableList().contains(this.table).not(),
-      r.tableCreate(this.table),
-      null
-    ).run(connection);
+  static linkedBy(OtherTable, foreignKey, targetKey = OtherTable.pk) {
+    return OtherTable.linkTo(this, foreignKey, targetKey);
   }
 
   constructor(data = {}) {
@@ -52,7 +64,11 @@ export default class Table {
     this.data = data;
   }
 
-  validate() {
-    this.data = Joi.validate(this.data, this.constructor.schema());
+  isValid() {
+    return this.constructor.validate(this.data);
+  }
+
+  attempt() {
+    this.data = this.constructor.attempt(this.data);
   }
 }

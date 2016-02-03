@@ -1,7 +1,5 @@
 import { expect } from 'chai';
-import Joi from 'joi';
 import Table from '../Table';
-import Link from '../Link';
 import Model, {
   HAS_ONE, BELONGS_TO,
   HAS_MANY, BELONGS_TO_MANY,
@@ -9,50 +7,7 @@ import Model, {
 
 
 describe('Model', () => {
-  describe('constructor', () => {
-    it('should throw Error if \'table\' is not overrided', () => {
-      expect(() => new Model()).to.throw(Error);
-    });
-
-    it('should not throw Error if \'table\' is overrided', () => {
-      class Foo extends Model {
-        static table = 'foo';
-      }
-      expect(() => new Foo()).to.not.throw(Error);
-    });
-  });
-
   describe('static', () => {
-    describe('schema', () => {
-      it('has default property', () => {
-        class Base extends Model {
-          static table = 'base';
-          static schema = () => ({
-            ...Model.schema(),
-            name: Joi.string().default('hello'),
-          });
-        }
-        expect(Base.schema()).to.have.property('id');
-        expect(Base.schema()).to.have.property('createdAt');
-        expect(Base.schema()).to.have.property('updatedAt');
-        expect(Base.schema()).to.have.property('name');
-      });
-
-      it('could be extended', () => {
-        class Base extends Model {
-          static table = 'base';
-          static schema = () => ({
-            ...Model.schema(),
-            name: Joi.string().default('hello'),
-          });
-        }
-        expect(Base.schema()).to.have.property('id');
-        expect(Base.schema()).to.have.property('createdAt');
-        expect(Base.schema()).to.have.property('updatedAt');
-        expect(Base.schema()).to.have.property('name');
-      });
-    });
-
     describe('hasOne', () => {
       it('should create hasOne relation', () => {
         class Foo extends Model {
@@ -68,10 +23,7 @@ describe('Model', () => {
             fooId: Foo.getForeignKey(),
           });
         }
-        const bar2foo = new Link({
-          linker: { Table: Bar, key: 'fooId' },
-          linkee: { Table: Foo, key: 'id' },
-        });
+        const bar2foo = Foo.linkedBy(Bar, 'fooId');
         Foo.hasOne('bar', bar2foo);
 
         expect(Foo.relations.bar).to.deep.equal({
@@ -96,10 +48,7 @@ describe('Model', () => {
             ...Model.schema(),
           });
         }
-        const foo2bar = new Link({
-          linker: { Table: Foo, key: 'barId' },
-          linkee: { Table: Bar, key: 'id' },
-        });
+        const foo2bar = Foo.linkTo(Bar, 'barId');
         Foo.belongsTo('bar', foo2bar);
 
         expect(Foo.relations.bar).to.deep.equal({
@@ -124,10 +73,7 @@ describe('Model', () => {
             fooId: Foo.getForeignKey(),
           });
         }
-        const bar2foo = new Link({
-          linker: { Table: Bar, key: 'fooId' },
-          linkee: { Table: Foo, key: 'id' },
-        });
+        const bar2foo = Foo.linkedBy(Bar, 'fooId');
         Foo.hasMany('bars', bar2foo);
 
         expect(Foo.relations.bars).to.deep.equal({
@@ -155,57 +101,24 @@ describe('Model', () => {
           static table = 'foobar';
           static schema = () => ({
             ...Model.schema(),
-            fooId: Foo.getForeignKey(),
-            barId: Bar.getForeignKey(),
+            fooId: Foo.getForeignKey({ isManyToMany: true }),
+            barId: Bar.getForeignKey({ isManyToMany: true }),
           });
         }
-        const foobarLinks = [
-          new Link({
-            linker: { Table: FooBar, key: 'fooId' },
-            linkee: { Table: Foo, key: 'id' },
-          }),
-          new Link({
-            linker: { Table: FooBar, key: 'barId' },
-            linkee: { Table: Bar, key: 'id' },
-          }),
-        ];
-        Foo.belongsToMany('bars', foobarLinks);
-        Bar.belongsToMany('foos', foobarLinks);
+        const foo2foobar2bar = [Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')];
+        const bar2foobar2foo = [Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')];
+        Foo.belongsToMany('bars', foo2foobar2bar);
+        Bar.belongsToMany('foos', bar2foobar2foo);
 
         expect(Foo.relations.bars).to.deep.equal({
-          links: foobarLinks,
+          link: foo2foobar2bar,
           type: BELONGS_TO_MANY,
         });
         expect(Bar.relations.foos).to.deep.equal({
-          links: foobarLinks,
+          link: bar2foobar2foo,
           type: BELONGS_TO_MANY,
         });
       });
-    });
-  });
-
-  describe('attempt', () => {
-    it('should update default properties', () => {
-      class Bar extends Model {
-        static table = 'foo';
-        static schema = () => ({
-          name: Joi.string().default('bar'),
-        });
-      }
-      const bar = new Bar();
-      bar.attempt();
-      expect(bar.data).to.have.property('name', 'bar');
-    });
-
-    it('should throw error when invalid', () => {
-      class Foo extends Model {
-        static table = 'foo';
-        static schema = {
-          name: Joi.string(),
-        };
-      }
-      const foo = new Foo({ name: 1 });
-      expect(() => foo.attempt()).to.throw(Error);
     });
   });
 });
