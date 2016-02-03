@@ -2,3 +2,4 @@ node_modules
 rethinkdb_data
 .*.swp
 lib
+*.log
