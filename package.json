@@ -1,6 +1,6 @@
 {
   "name": "nothinkdb",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "ORM: Object-Rethinkdb-Mapping",
   "main": "lib/nothinkdb.js",
   "scripts": {

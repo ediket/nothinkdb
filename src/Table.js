@@ -1,3 +1,4 @@
+import r from 'rethinkdb';
 import Joi from 'joi';
 import _ from 'lodash';
 import assert from 'assert';
@@ -10,7 +11,7 @@ export default class Table {
   static pk = 'id';
 
   static schema = () => ({
-    id: Joi.string().max(32).default(() => uuid.v4(), 'primary key').meta({ index: true }),
+    id: Joi.string().max(36).default(() => uuid.v4(), 'primary key').meta({ index: true }),
     createdAt: Joi.date().default(() => new Date(), 'time of creation'),
     updatedAt: Joi.date().default(() => new Date(), 'time of updated'),
   });
@@ -23,52 +24,65 @@ export default class Table {
     return Joi.attempt(data, this.schema());
   }
 
-  static hasColumn(columnName) {
-    return _.has(this.schema(), columnName);
+  static hasField(fieldName) {
+    return _.has(this.schema(), fieldName);
   }
 
-  static assertColumn(columnName) {
-    return assert.ok(this.hasColumn(columnName), `Column '${columnName}' is unspecified in table '${this.table}'.`);
+  static assertField(fieldName) {
+    return assert.ok(this.hasField(fieldName), `Field '${fieldName}' is unspecified in table '${this.table}'.`);
   }
 
-  static getColumn(columnName) {
-    this.assertColumn(columnName);
-    return this.schema()[columnName];
+  static getField(fieldName) {
+    this.assertField(fieldName);
+    return this.schema()[fieldName];
   }
 
   static getForeignKey(options = {}) {
-    const { columnName = this.pk, isManyToMany = false } = options;
-    const column = this.getColumn(columnName);
+    const { fieldName = this.pk, isManyToMany = false } = options;
+    const field = this.getField(fieldName);
 
     if (isManyToMany) {
-      return column.required();
+      return field.required();
     }
-    return column.default(null);
+    return field.default(null);
   }
 
-  static linkTo(OtherTable, foreignKey, targetKey = OtherTable.pk) {
+  static linkTo(RightTable, leftField, options = {}) {
+    const { index = RightTable.pk } = options;
     return new Link({
-      linker: { Table: this, key: foreignKey },
-      linkee: { Table: OtherTable, key: targetKey },
+      left: { Table: this, field: leftField },
+      right: { Table: RightTable, field: index },
     });
   }
 
-  static linkedBy(OtherTable, foreignKey, targetKey = OtherTable.pk) {
-    return OtherTable.linkTo(this, foreignKey, targetKey);
+  static linkedBy(LeftTable, leftField, options) {
+    return LeftTable.linkTo(this, leftField, options);
+  }
+
+  static query() {
+    return r.table(this.table);
+  }
+
+  static async sync(connection) {
+    await this.ensureTable(connection);
+  }
+
+  static async ensureTable(connection) {
+    await r.branch(
+      r.tableList().contains(this.table).not(),
+      r.tableCreate(this.table),
+      null
+    ).run(connection);
   }
 
   constructor(data = {}) {
     assert.ok(this.constructor.table, 'Table should have static property \'table\'.');
     assert.ok(this.constructor.pk, 'Table should have static property \'pk\'.');
     assert.ok(_.isObject(data), 'data should be object type.');
-    this.data = data;
+    this.data = this.constructor.attempt(data);
   }
 
-  isValid() {
-    return this.constructor.validate(this.data);
-  }
-
-  attempt() {
-    this.data = this.constructor.attempt(this.data);
+  getPk() {
+    return this.data[this.constructor.pk];
   }
 }

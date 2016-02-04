@@ -87,48 +87,48 @@ describe('Table', () => {
       });
     });
 
-    describe('hasColumn', () => {
-      it('should return true when specified columnName is given', () => {
+    describe('hasField', () => {
+      it('should return true when specified fieldName is given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({
             name: Joi.string(),
           });
         }
-        expect(Foo.hasColumn('name')).to.be.true;
+        expect(Foo.hasField('name')).to.be.true;
       });
 
-      it('should return false when unspecified columnName is given', () => {
+      it('should return false when unspecified fieldName is given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({});
         }
-        expect(Foo.hasColumn('name')).to.be.false;
+        expect(Foo.hasField('name')).to.be.false;
       });
     });
 
-    describe('assertColumn', () => {
-      it('should not throw error when specified columnName is given', () => {
+    describe('assertField', () => {
+      it('should not throw error when specified fieldName is given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({
             name: Joi.string(),
           });
         }
-        expect(() => Foo.assertColumn('name')).to.not.throw(Error);
+        expect(() => Foo.assertField('name')).to.not.throw(Error);
       });
 
-      it('should throw error when unspecified columnName is given', () => {
+      it('should throw error when unspecified fieldName is given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({});
         }
-        expect(() => Foo.assertColumn('name')).to.throw(Error);
+        expect(() => Foo.assertField('name')).to.throw(Error);
       });
     });
 
-    describe('getColumn', () => {
-      it('should return column schema when specified columnName is given', () => {
+    describe('getField', () => {
+      it('should return field schema when specified fieldName is given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({
@@ -136,17 +136,17 @@ describe('Table', () => {
           });
         }
 
-        const column = Foo.getColumn('name');
-        expect(column).to.be.ok;
-        expect(() => Joi.assert('string', column)).to.not.throw(Error);
+        const field = Foo.getField('name');
+        expect(field).to.be.ok;
+        expect(() => Joi.assert('string', field)).to.not.throw(Error);
       });
 
-      it('should throw error when unspecified columnName is given', () => {
+      it('should throw error when unspecified fieldName is given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({});
         }
-        expect(() => Foo.getColumn('name')).to.throw(Error);
+        expect(() => Foo.getField('name')).to.throw(Error);
       });
     });
 
@@ -160,12 +160,12 @@ describe('Table', () => {
           });
         }
 
-        const column = Foo.getForeignKey();
-        expect(column).to.be.ok;
-        expect(() => Joi.assert('string', column)).to.not.throw(Error);
+        const field = Foo.getForeignKey();
+        expect(field).to.be.ok;
+        expect(() => Joi.assert('string', field)).to.not.throw(Error);
       });
 
-      it('should return column schema when options.columnName is given', () => {
+      it('should return field schema when options.fieldName is given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({
@@ -173,9 +173,9 @@ describe('Table', () => {
           });
         }
 
-        const column = Foo.getForeignKey({ columnName: 'name' });
-        expect(column).to.be.ok;
-        expect(() => Joi.assert('string', column)).to.not.throw(Error);
+        const field = Foo.getForeignKey({ fieldName: 'name' });
+        expect(field).to.be.ok;
+        expect(() => Joi.assert('string', field)).to.not.throw(Error);
       });
 
       it('should return default(null) schema when options.isManyToMany is not given', () => {
@@ -186,11 +186,11 @@ describe('Table', () => {
           });
         }
 
-        const column = Foo.getForeignKey();
-        expect(Joi.attempt(undefined, column)).to.be.null;
+        const field = Foo.getForeignKey();
+        expect(Joi.attempt(undefined, field)).to.be.null;
       });
 
-      it('should return required() column schema when options.isManyToMany is given', () => {
+      it('should return required() field schema when options.isManyToMany is given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({
@@ -198,9 +198,9 @@ describe('Table', () => {
           });
         }
 
-        const column = Foo.getForeignKey({ isManyToMany: true });
-        expect(column).to.be.ok;
-        expect(() => Joi.assert(undefined, column)).to.throw(Error);
+        const field = Foo.getForeignKey({ isManyToMany: true });
+        expect(field).to.be.ok;
+        expect(() => Joi.assert(undefined, field)).to.throw(Error);
       });
     });
 
@@ -222,11 +222,11 @@ describe('Table', () => {
         const foo2bar = Foo.linkTo(Bar, 'barId');
         expect(foo2bar).to.be.ok;
         expect(foo2bar.constructor).to.equal(Link);
-        expect(foo2bar.linker).to.deep.equal({
-          Table: Foo, key: 'barId',
+        expect(foo2bar.left).to.deep.equal({
+          Table: Foo, field: 'barId',
         });
-        expect(foo2bar.linkee).to.deep.equal({
-          Table: Bar, key: 'id',
+        expect(foo2bar.right).to.deep.equal({
+          Table: Bar, field: 'id',
         });
       });
     });
@@ -249,54 +249,13 @@ describe('Table', () => {
         const foo2bar = Foo.linkedBy(Bar, 'fooId');
         expect(foo2bar).to.be.ok;
         expect(foo2bar.constructor).to.equal(Link);
-        expect(foo2bar.linker).to.deep.equal({
-          Table: Bar, key: 'fooId',
+        expect(foo2bar.left).to.deep.equal({
+          Table: Bar, field: 'fooId',
         });
-        expect(foo2bar.linkee).to.deep.equal({
-          Table: Foo, key: 'id',
+        expect(foo2bar.right).to.deep.equal({
+          Table: Foo, field: 'id',
         });
       });
-    });
-  });
-
-  describe('isValid', () => {
-    class Foo extends Table {
-      static table = 'foo';
-      static schema = () => ({
-        name: Joi.string().required(),
-      });
-    }
-
-    it('should return true when data is valid', () => {
-      const foo = new Foo({ name: 'foo' });
-      expect(foo.isValid()).to.be.true;
-    });
-
-    it('should throw error when invalid', () => {
-      const foo = new Foo({});
-      expect(foo.isValid()).to.be.false;
-    });
-  });
-
-  describe('attempt', () => {
-    class Foo extends Table {
-      static table = 'foo';
-      static schema = () => ({
-        foo: Joi.string().default('foo'),
-        bar: Joi.string().required(),
-      });
-    }
-
-    it('should update default properties', () => {
-      const foo = new Foo({ bar: 'bar' });
-      foo.attempt();
-      expect(foo.data).to.have.property('foo', 'foo');
-      expect(foo.data).to.have.property('bar', 'bar');
-    });
-
-    it('should throw error when invalid', () => {
-      const foo = new Foo({});
-      expect(() => foo.attempt()).to.throw(Error);
     });
   });
 });

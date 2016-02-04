@@ -16,34 +16,34 @@ describe('Link', () => {
 
     it('should create link', () => {
       const link = new Link({
-        linker: { Table: Foo, key: 'foo' },
-        linkee: { Table: Foo, key: 'bar' },
+        left: { Table: Foo, field: 'foo' },
+        right: { Table: Foo, field: 'bar' },
       });
-      expect(link.linker).to.deep.equal({ Table: Foo, key: 'foo' });
-      expect(link.linkee).to.deep.equal({ Table: Foo, key: 'bar' });
+      expect(link.left).to.deep.equal({ Table: Foo, field: 'foo' });
+      expect(link.right).to.deep.equal({ Table: Foo, field: 'bar' });
     });
 
     it('should throw Error when invalid data is given', () => {
       expect(() => new Link({})).to.throw(Error);
       expect(() => new Link({
-        linker: {},
-        linkee: {},
+        left: {},
+        right: {},
       })).to.throw(Error);
       expect(() => new Link({
-        linker: { Table: {}, key: null },
-        linkee: { Table: {}, key: null },
+        left: { Table: {}, field: null },
+        right: { Table: {}, field: null },
       })).to.throw(Error);
       expect(() => new Link({
-        linker: { Table: Foo, key: null },
-        linkee: { Table: Foo, key: null },
+        left: { Table: Foo, field: null },
+        right: { Table: Foo, field: null },
       })).to.throw(Error);
       expect(() => new Link({
-        linker: { Table: Foo, key: 'noop' },
-        linkee: { Table: Foo, key: 'noop' },
+        left: { Table: Foo, field: 'noop' },
+        right: { Table: Foo, field: 'noop' },
       })).to.throw(Error);
       expect(() => new Link({
-        linker: { Table: Foo, key: 'foo' },
-        linkee: { Table: Foo, key: 'noop' },
+        left: { Table: Foo, field: 'foo' },
+        right: { Table: Foo, field: 'noop' },
       })).to.throw(Error);
     });
   });

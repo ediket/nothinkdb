@@ -1,3 +1,4 @@
+import r from 'rethinkdb';
 import { expect } from 'chai';
 import Table from '../Table';
 import Model, {
@@ -7,6 +8,21 @@ import Model, {
 
 
 describe('Model', () => {
+  let connection;
+  before(async () => {
+    connection = await r.connect({});
+  });
+
+  beforeEach(async () => {
+    await r.branch(r.tableList().contains('foo').not(), r.tableCreate('foo'), null).run(connection);
+    await r.branch(r.tableList().contains('bar').not(), r.tableCreate('bar'), null).run(connection);
+    await r.branch(r.tableList().contains('foobar').not(), r.tableCreate('foobar'), null).run(connection);
+  });
+
+  after(async () => {
+    await connection.close();
+  });
+
   describe('static', () => {
     describe('hasOne', () => {
       it('should create hasOne relation', () => {
@@ -14,6 +30,9 @@ describe('Model', () => {
           static table = 'foo';
           static schema = () => ({
             ...Model.schema(),
+          });
+          static relations = () => ({
+            bar: Foo.hasOne(Foo.linkedBy(Bar, 'fooId')),
           });
         }
         class Bar extends Model {
@@ -23,13 +42,9 @@ describe('Model', () => {
             fooId: Foo.getForeignKey(),
           });
         }
-        const bar2foo = Foo.linkedBy(Bar, 'fooId');
-        Foo.hasOne('bar', bar2foo);
 
-        expect(Foo.relations.bar).to.deep.equal({
-          link: bar2foo,
-          type: HAS_ONE,
-        });
+        expect(Foo.relations().bar.type).to.equal(HAS_ONE);
+        expect(Foo.relations().bar.link).to.be.ok;
       });
     });
 
@@ -41,6 +56,9 @@ describe('Model', () => {
             ...Model.schema(),
             barId: Bar.getForeignKey(),
           });
+          static relations = () => ({
+            bar: Foo.belongsTo(Foo.linkTo(Bar, 'barId')),
+          });
         }
         class Bar extends Model {
           static table = 'bar';
@@ -48,13 +66,9 @@ describe('Model', () => {
             ...Model.schema(),
           });
         }
-        const foo2bar = Foo.linkTo(Bar, 'barId');
-        Foo.belongsTo('bar', foo2bar);
 
-        expect(Foo.relations.bar).to.deep.equal({
-          link: foo2bar,
-          type: BELONGS_TO,
-        });
+        expect(Foo.relations().bar.type).to.equal(BELONGS_TO);
+        expect(Foo.relations().bar.link).to.be.ok;
       });
     });
 
@@ -65,6 +79,9 @@ describe('Model', () => {
           static schema = () => ({
             ...Model.schema(),
           });
+          static relations = () => ({
+            bar: Foo.hasMany(Foo.linkedBy(Bar, 'fooId')),
+          });
         }
         class Bar extends Model {
           static table = 'bar';
@@ -73,13 +90,9 @@ describe('Model', () => {
             fooId: Foo.getForeignKey(),
           });
         }
-        const bar2foo = Foo.linkedBy(Bar, 'fooId');
-        Foo.hasMany('bars', bar2foo);
 
-        expect(Foo.relations.bars).to.deep.equal({
-          link: bar2foo,
-          type: HAS_MANY,
-        });
+        expect(Foo.relations().bar.type).to.equal(HAS_MANY);
+        expect(Foo.relations().bar.link).to.be.ok;
       });
     });
 
@@ -90,11 +103,17 @@ describe('Model', () => {
           static schema = () => ({
             ...Model.schema(),
           });
+          static relations = () => ({
+            bars: Foo.belongsToMany([Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')]),
+          });
         }
         class Bar extends Model {
           static table = 'bar';
           static schema = () => ({
             ...Model.schema(),
+          });
+          static relations = () => ({
+            foos: Bar.belongsToMany([Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')]),
           });
         }
         class FooBar extends Table {
@@ -105,20 +124,156 @@ describe('Model', () => {
             barId: Bar.getForeignKey({ isManyToMany: true }),
           });
         }
-        const foo2foobar2bar = [Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')];
-        const bar2foobar2foo = [Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')];
-        Foo.belongsToMany('bars', foo2foobar2bar);
-        Bar.belongsToMany('foos', bar2foobar2foo);
 
-        expect(Foo.relations.bars).to.deep.equal({
-          link: foo2foobar2bar,
-          type: BELONGS_TO_MANY,
-        });
-        expect(Bar.relations.foos).to.deep.equal({
-          link: bar2foobar2foo,
-          type: BELONGS_TO_MANY,
-        });
+        expect(Foo.relations().bars.type).to.equal(BELONGS_TO_MANY);
+        expect(Foo.relations().bars.link).to.be.ok;
+        expect(Bar.relations().foos.type).to.equal(BELONGS_TO_MANY);
+        expect(Bar.relations().foos.link).to.be.ok;
       });
+    });
+  });
+
+  describe('queryRelation', () => {
+    it('should query hasOne relation', async () => {
+      class Foo extends Model {
+        static table = 'foo';
+        static schema = () => ({
+          ...Model.schema(),
+        });
+        static relations = () => ({
+          bar: Foo.hasOne(Foo.linkedBy(Bar, 'fooId')),
+        });
+      }
+      class Bar extends Model {
+        static table = 'bar';
+        static schema = () => ({
+          ...Model.schema(),
+          fooId: Foo.getForeignKey(),
+        });
+      }
+      await Foo.sync(connection);
+      await Bar.sync(connection);
+
+      const foo = new Foo({});
+      const bar = new Bar({
+        fooId: foo.getPk(),
+      });
+
+      await Foo.query().insert(foo.data).run(connection);
+      await Bar.query().insert(bar.data).run(connection);
+
+      const result = await foo.queryRelation('bar').run(connection);
+      expect(bar.data).to.deep.equal(result);
+    });
+
+    it('should query belongsTo relation', async () => {
+      class Foo extends Model {
+        static table = 'foo';
+        static schema = () => ({
+          ...Model.schema(),
+          barId: Bar.getForeignKey(),
+        });
+        static relations = () => ({
+          bar: Foo.belongsTo(Foo.linkTo(Bar, 'barId')),
+        });
+      }
+      class Bar extends Model {
+        static table = 'bar';
+        static schema = () => ({
+          ...Model.schema(),
+        });
+      }
+      await Foo.sync(connection);
+      await Bar.sync(connection);
+
+      const bar = new Bar({});
+      const foo = new Foo({
+        barId: bar.getPk(),
+      });
+
+      await Foo.query().insert(foo.data).run(connection);
+      await Bar.query().insert(bar.data).run(connection);
+
+      const result = await foo.queryRelation('bar').run(connection);
+      expect(bar.data).to.deep.equal(result);
+    });
+
+    it('should query hasMany relation', async () => {
+      class Foo extends Model {
+        static table = 'foo';
+        static schema = () => ({
+          ...Model.schema(),
+        });
+        static relations = () => ({
+          bars: Foo.hasMany(Foo.linkedBy(Bar, 'fooId')),
+        });
+      }
+      class Bar extends Model {
+        static table = 'bar';
+        static schema = () => ({
+          ...Model.schema(),
+          fooId: Foo.getForeignKey(),
+        });
+      }
+      await Foo.sync(connection);
+      await Bar.sync(connection);
+
+      const foo = new Foo({});
+      const bar = new Bar({
+        fooId: foo.getPk(),
+      });
+
+      await Foo.query().insert(foo.data).run(connection);
+      await Bar.query().insert(bar.data).run(connection);
+
+      const result = await foo.queryRelation('bars').run(connection);
+      expect(bar.data).to.deep.equal(result[0]);
+    });
+
+    it('should query belongsToMany relation', async () => {
+      class Foo extends Model {
+        static table = 'foo';
+        static schema = () => ({
+          ...Model.schema(),
+        });
+        static relations = () => ({
+          bars: Foo.belongsToMany([Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')]),
+        });
+      }
+      class Bar extends Model {
+        static table = 'bar';
+        static schema = () => ({
+          ...Model.schema(),
+        });
+        static relations = () => ({
+          foos: Bar.belongsToMany([Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')]),
+        });
+      }
+      class FooBar extends Table {
+        static table = 'foobar';
+        static schema = () => ({
+          ...Model.schema(),
+          fooId: Foo.getForeignKey({ isManyToMany: true }),
+          barId: Bar.getForeignKey({ isManyToMany: true }),
+        });
+      }
+      await Foo.sync(connection);
+      await Bar.sync(connection);
+      await FooBar.sync(connection);
+
+      const foo = new Foo({});
+      const bar = new Bar({});
+      const foobar = new FooBar({
+        fooId: foo.getPk(),
+        barId: bar.getPk(),
+      });
+
+      await Foo.query().insert(foo.data).run(connection);
+      await Bar.query().insert(bar.data).run(connection);
+      await FooBar.query().insert(foobar.data).run(connection);
+
+      const result = await foo.queryRelation('bars').run(connection);
+      expect(bar.data).to.deep.equal(result[0]);
     });
   });
 });
