@@ -61,47 +61,54 @@ export default class Model extends Table {
   queryRelation(as) {
     const { link, type } = this.constructor.relations()[as];
     if (type === HAS_ONE) {
-      const { left, right } = link;
-      if (this.data[right.field] === null) return null;
-
-      const query = left.Table.query().getAll(this.data[right.field], { index: left.field });
-      return r.branch(
-        query.count().gt(0),
-        query.nth(0),
-        {}
-      );
+      return this.queryHasOne(link);
     }
     else if (type === BELONGS_TO) {
-      const { left, right } = link;
-      if (this.data[left.field] === null) return null;
-
-      const query = right.Table.query().getAll(this.data[left.field], { index: right.field });
-      return r.branch(
-        query.count().gt(0),
-        query.nth(0),
-        {}
-      );
+      return this.queryBelongsTo(link);
     }
     else if (type === HAS_MANY) {
-      const { left, right } = link;
-      if (this.data[left.field] === null) return r.expr([]);
-
-      const query = left.Table.query()
-        .getAll(this.data[right.field], { index: left.field });
-      return query.coerceTo('array');
+      return this.queryHasMany(link);
     }
     else if (type === BELONGS_TO_MANY) {
-      if (this.data[link[0].left.field] === null) return r.expr([]);
-
-      const query = link[0].left.Table.query()
-        .getAll(this.data[link[0].right.field], { index: link[0].left.field }).coerceTo('array')
-        .concatMap(function(row) {
-          return link[1].right.Table.query()
-            .getAll(row(link[1].left.field), { index: link[1].right.field }).coerceTo('array');
-        });
-      return query;
+      return this.queryBelongsToMany(link);
     }
-    return null;
+    throw new Error('Invalid relation type:', type);
+  }
+
+  queryHasOne(link) {
+    const { left, right } = link;
+    if (this.data[right.field] === null) return null;
+
+    const query = left.Table.query().getAll(this.data[right.field], { index: left.field });
+    return r.branch(query.count().gt(0), query.nth(0), {});
+  }
+
+  queryBelongsTo(link) {
+    const { left, right } = link;
+    if (this.data[left.field] === null) return null;
+
+    const query = right.Table.query().getAll(this.data[left.field], { index: right.field });
+    return r.branch(query.count().gt(0), query.nth(0), {});
+  }
+
+  queryHasMany(link) {
+    const { left, right } = link;
+    if (this.data[left.field] === null) return r.expr([]);
+
+    const query = left.Table.query().getAll(this.data[right.field], { index: left.field });
+    return query.coerceTo('array');
+  }
+
+  queryBelongsToMany(link) {
+    if (this.data[link[0].left.field] === null) return r.expr([]);
+
+    const query = link[0].left.Table.query()
+      .getAll(this.data[link[0].right.field], { index: link[0].left.field }).coerceTo('array')
+      .concatMap(function(row) {
+        return link[1].right.Table.query()
+          .getAll(row(link[1].left.field), { index: link[1].right.field }).coerceTo('array');
+      });
+    return query;
   }
 
   constructor(data = {}, isSynced = false) {
