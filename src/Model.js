@@ -97,8 +97,24 @@ export default class Model {
     return this.data[this.constructor.pk];
   }
 
-  queryRelation(as, options = {}) {
-    const relation = this.constructor.relations()[as];
+  getRelation(as) {
+    return this.constructor.relations()[as];
+  }
+
+  join(as, options = {}) {
+    const relation = this.getRelation(as);
     return relation.join(as, r.expr(this.data), options).do(r.row(as));
+  }
+
+  addToRelation(as, otherPk) {
+    const relation = this.getRelation(as);
+    assert.ok(relation.add, 'unsupported relation.');
+    return relation.add(this.getPk(), otherPk);
+  }
+
+  removeFromRelation(as, otherPk) {
+    const relation = this.getRelation(as);
+    assert.ok(relation.remove, 'unsupported relation.');
+    return relation.remove(otherPk);
   }
 }

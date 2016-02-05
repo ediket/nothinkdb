@@ -3,6 +3,7 @@ import r from 'rethinkdb';
 import assert from 'assert';
 import Link from './Link';
 
+
 export function hasOne(link) {
   assert.equal(link.constructor, Link);
 
@@ -49,7 +50,17 @@ export function hasMany(link) {
       return { [as]: joinQuery };
     });
   }
-  return { join, link };
+  function add(onePk, otherPk) {
+    const { left, right } = link;
+    return r.table(right.Model.table).get(onePk).do(function(rightRow) {
+      return r.table(left.Model.table).get(otherPk).update({ [left.field]: rightRow(right.field) });
+    });
+  }
+  function remove(leftPk) {
+    const { left } = link;
+    return r.table(left.Model.table).get(leftPk).update({ [left.field]: null });
+  }
+  return { join, add, remove, link };
 }
 
 export function belongsToMany(link) {
@@ -70,5 +81,19 @@ export function belongsToMany(link) {
       return { [as]: joinQuery };
     });
   }
-  return { join, link };
+  function add(onePk, otherPk) {
+    const [link1, link2] = link;
+    const Relation = link1.left.Model;
+    const relation = new Relation({
+      [link1.left.field]: onePk,
+      [link2.left.field]: otherPk,
+    });
+    return r.table(Relation.table).insert(relation.data, { conflict: 'replace' });
+  }
+  function remove(otherPk) {
+    const [link1, link2] = link;
+    const Relation = link1.left.Model;
+    return r.table(Relation.table).getAll(otherPk, { index: link2.left.field }).delete();
+  }
+  return { join, add, remove, link };
 }
