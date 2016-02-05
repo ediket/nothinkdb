@@ -272,8 +272,10 @@ describe('Model', () => {
       await Bar.query().insert(bar.data).run(connection);
       await FooBar.query().insert(foobar.data).run(connection);
 
-      const result = await foo.queryRelation('bars').run(connection);
-      expect(bar.data).to.deep.equal(result[0]);
+      const bars = await foo.queryRelation('bars').run(connection);
+      expect(bar.data).to.deep.equal(bars[0]);
+      const foos = await bar.queryRelation('foos').run(connection);
+      expect(foo.data).to.deep.equal(foos[0]);
     });
   });
 });
