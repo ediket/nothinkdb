@@ -1,10 +1,10 @@
 import r from 'rethinkdb';
+import Joi from 'joi';
+import uuid from 'node-uuid';
 import { expect } from 'chai';
-import Table from '../Table';
-import Model, {
-  HAS_ONE, BELONGS_TO,
-  HAS_MANY, BELONGS_TO_MANY,
-} from '../Model';
+import Model from '../Model';
+import Link from '../Link';
+import { hasOne, belongsTo, hasMany, belongsToMany } from '../relations';
 
 
 describe('Model', () => {
@@ -23,42 +23,212 @@ describe('Model', () => {
     await connection.close();
   });
 
+  describe('constructor', () => {
+    it('should throw Error if \'table\' is not overrided', () => {
+      expect(() => new Model()).to.throw(Error);
+    });
+
+    it('should not throw Error if \'table\' is overrided', () => {
+      class Foo extends Model {
+        static table = 'foo';
+      }
+      expect(() => new Foo()).to.not.throw(Error);
+    });
+  });
+
   describe('static', () => {
-    describe('hasOne', () => {
-      it('should create hasOne relation', () => {
+    describe('schema', () => {
+      it('has default property', () => {
+        class Base extends Model {
+          static table = 'base';
+          static schema = () => ({
+            ...Model.schema(),
+            name: Joi.string().default('hello'),
+          });
+        }
+        expect(Base.schema()).to.have.property('id');
+        expect(Base.schema()).to.have.property('createdAt');
+        expect(Base.schema()).to.have.property('updatedAt');
+        expect(Base.schema()).to.have.property('name');
+      });
+
+      it('could be extended', () => {
+        class Base extends Model {
+          static table = 'base';
+          static schema = () => ({
+            ...Model.schema(),
+            name: Joi.string().default('hello'),
+          });
+        }
+        expect(Base.schema()).to.have.property('id');
+        expect(Base.schema()).to.have.property('createdAt');
+        expect(Base.schema()).to.have.property('updatedAt');
+        expect(Base.schema()).to.have.property('name');
+      });
+    });
+
+    describe('validate', () => {
+      class Foo extends Model {
+        static table = 'foo';
+        static schema = () => ({
+          name: Joi.string().required(),
+        });
+      }
+
+      it('should return true when data is valid', () => {
+        expect(Foo.validate({ name: 'foo' })).to.be.true;
+      });
+
+      it('should throw error when invalid', () => {
+        expect(Foo.validate({})).to.be.false;
+      });
+    });
+
+    describe('attempt', () => {
+      class Foo extends Model {
+        static table = 'foo';
+        static schema = () => ({
+          foo: Joi.string().default('foo'),
+          bar: Joi.string().required(),
+        });
+      }
+
+      it('should update default properties', () => {
+        const result = Foo.attempt({ bar: 'bar' });
+        expect(result).to.have.property('foo', 'foo');
+        expect(result).to.have.property('bar', 'bar');
+      });
+
+      it('should throw error when invalid', () => {
+        expect(() => Foo.attempt({})).to.throw(Error);
+      });
+    });
+
+    describe('hasField', () => {
+      it('should return true when specified fieldName is given', () => {
+        class Foo extends Model {
+          static table = 'foo';
+          static schema = () => ({
+            name: Joi.string(),
+          });
+        }
+        expect(Foo.hasField('name')).to.be.true;
+      });
+
+      it('should return false when unspecified fieldName is given', () => {
+        class Foo extends Model {
+          static table = 'foo';
+          static schema = () => ({});
+        }
+        expect(Foo.hasField('name')).to.be.false;
+      });
+    });
+
+    describe('assertField', () => {
+      it('should not throw error when specified fieldName is given', () => {
+        class Foo extends Model {
+          static table = 'foo';
+          static schema = () => ({
+            name: Joi.string(),
+          });
+        }
+        expect(() => Foo.assertField('name')).to.not.throw(Error);
+      });
+
+      it('should throw error when unspecified fieldName is given', () => {
+        class Foo extends Model {
+          static table = 'foo';
+          static schema = () => ({});
+        }
+        expect(() => Foo.assertField('name')).to.throw(Error);
+      });
+    });
+
+    describe('getField', () => {
+      it('should return field schema when specified fieldName is given', () => {
+        class Foo extends Model {
+          static table = 'foo';
+          static schema = () => ({
+            name: Joi.string(),
+          });
+        }
+
+        const field = Foo.getField('name');
+        expect(field).to.be.ok;
+        expect(() => Joi.assert('string', field)).to.not.throw(Error);
+      });
+
+      it('should throw error when unspecified fieldName is given', () => {
+        class Foo extends Model {
+          static table = 'foo';
+          static schema = () => ({});
+        }
+        expect(() => Foo.getField('name')).to.throw(Error);
+      });
+    });
+
+    describe('getForeignKey', () => {
+      it('should return primary key schema when any argument is not given', () => {
+        class Foo extends Model {
+          static table = 'foo';
+          static pk = 'name';
+          static schema = () => ({
+            name: Joi.string().default(() => uuid.v4(), 'pk'),
+          });
+        }
+
+        const field = Foo.getForeignKey();
+        expect(field).to.be.ok;
+        expect(() => Joi.assert('string', field)).to.not.throw(Error);
+      });
+
+      it('should return field schema when options.fieldName is given', () => {
+        class Foo extends Model {
+          static table = 'foo';
+          static schema = () => ({
+            name: Joi.string().default(() => uuid.v4(), 'pk'),
+          });
+        }
+
+        const field = Foo.getForeignKey({ fieldName: 'name' });
+        expect(field).to.be.ok;
+        expect(() => Joi.assert('string', field)).to.not.throw(Error);
+      });
+
+      it('should return default(null) schema when options.isManyToMany is not given', () => {
         class Foo extends Model {
           static table = 'foo';
           static schema = () => ({
             ...Model.schema(),
           });
-          static relations = () => ({
-            bar: Foo.hasOne(Foo.linkedBy(Bar, 'fooId')),
-          });
         }
-        class Bar extends Model {
-          static table = 'bar';
+
+        const field = Foo.getForeignKey();
+        expect(Joi.attempt(undefined, field)).to.be.null;
+      });
+
+      it('should return required() field schema when options.isManyToMany is given', () => {
+        class Foo extends Model {
+          static table = 'foo';
           static schema = () => ({
             ...Model.schema(),
-            fooId: Foo.getForeignKey(),
           });
         }
 
-        expect(Foo.relations().bar.type).to.equal(HAS_ONE);
-        expect(Foo.relations().bar.link).to.be.ok;
+        const field = Foo.getForeignKey({ isManyToMany: true });
+        expect(field).to.be.ok;
+        expect(() => Joi.assert(undefined, field)).to.throw(Error);
       });
     });
 
-    describe('belongsTo', () => {
-      it('should create belongsTo relation', () => {
+    describe('linkTo', () => {
+      it('should return link', () => {
         class Foo extends Model {
           static table = 'foo';
           static schema = () => ({
             ...Model.schema(),
             barId: Bar.getForeignKey(),
           });
-          static relations = () => ({
-            bar: Foo.belongsTo(Foo.linkTo(Bar, 'barId')),
-          });
         }
         class Bar extends Model {
           static table = 'bar';
@@ -66,21 +236,24 @@ describe('Model', () => {
             ...Model.schema(),
           });
         }
-
-        expect(Foo.relations().bar.type).to.equal(BELONGS_TO);
-        expect(Foo.relations().bar.link).to.be.ok;
+        const foo2bar = Foo.linkTo(Bar, 'barId');
+        expect(foo2bar).to.be.ok;
+        expect(foo2bar.constructor).to.equal(Link);
+        expect(foo2bar.left).to.deep.equal({
+          Model: Foo, field: 'barId',
+        });
+        expect(foo2bar.right).to.deep.equal({
+          Model: Bar, field: 'id',
+        });
       });
     });
 
-    describe('hasMany', () => {
-      it('should create hasMany relation', () => {
+    describe('linkedBy', () => {
+      it('should return reverse link', () => {
         class Foo extends Model {
           static table = 'foo';
           static schema = () => ({
             ...Model.schema(),
-          });
-          static relations = () => ({
-            bar: Foo.hasMany(Foo.linkedBy(Bar, 'fooId')),
           });
         }
         class Bar extends Model {
@@ -90,45 +263,15 @@ describe('Model', () => {
             fooId: Foo.getForeignKey(),
           });
         }
-
-        expect(Foo.relations().bar.type).to.equal(HAS_MANY);
-        expect(Foo.relations().bar.link).to.be.ok;
-      });
-    });
-
-    describe('belongsToMany', () => {
-      it('should create belongsToMany relation', () => {
-        class Foo extends Model {
-          static table = 'foo';
-          static schema = () => ({
-            ...Model.schema(),
-          });
-          static relations = () => ({
-            bars: Foo.belongsToMany([Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')]),
-          });
-        }
-        class Bar extends Model {
-          static table = 'bar';
-          static schema = () => ({
-            ...Model.schema(),
-          });
-          static relations = () => ({
-            foos: Bar.belongsToMany([Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')]),
-          });
-        }
-        class FooBar extends Table {
-          static table = 'foobar';
-          static schema = () => ({
-            ...Model.schema(),
-            fooId: Foo.getForeignKey({ isManyToMany: true }),
-            barId: Bar.getForeignKey({ isManyToMany: true }),
-          });
-        }
-
-        expect(Foo.relations().bars.type).to.equal(BELONGS_TO_MANY);
-        expect(Foo.relations().bars.link).to.be.ok;
-        expect(Bar.relations().foos.type).to.equal(BELONGS_TO_MANY);
-        expect(Bar.relations().foos.link).to.be.ok;
+        const foo2bar = Foo.linkedBy(Bar, 'fooId');
+        expect(foo2bar).to.be.ok;
+        expect(foo2bar.constructor).to.equal(Link);
+        expect(foo2bar.left).to.deep.equal({
+          Model: Bar, field: 'fooId',
+        });
+        expect(foo2bar.right).to.deep.equal({
+          Model: Foo, field: 'id',
+        });
       });
     });
   });
@@ -141,7 +284,7 @@ describe('Model', () => {
           ...Model.schema(),
         });
         static relations = () => ({
-          bar: Foo.hasOne(Foo.linkedBy(Bar, 'fooId')),
+          bar: hasOne(Foo.linkedBy(Bar, 'fooId')),
         });
       }
       class Bar extends Model {
@@ -174,7 +317,7 @@ describe('Model', () => {
           barId: Bar.getForeignKey(),
         });
         static relations = () => ({
-          bar: Foo.belongsTo(Foo.linkTo(Bar, 'barId')),
+          bar: belongsTo(Foo.linkTo(Bar, 'barId')),
         });
       }
       class Bar extends Model {
@@ -205,7 +348,7 @@ describe('Model', () => {
           ...Model.schema(),
         });
         static relations = () => ({
-          bars: Foo.hasMany(Foo.linkedBy(Bar, 'fooId')),
+          bars: hasMany(Foo.linkedBy(Bar, 'fooId')),
         });
       }
       class Bar extends Model {
@@ -237,7 +380,7 @@ describe('Model', () => {
           ...Model.schema(),
         });
         static relations = () => ({
-          bars: Foo.belongsToMany([Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')]),
+          bars: belongsToMany([Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')]),
         });
       }
       class Bar extends Model {
@@ -246,10 +389,10 @@ describe('Model', () => {
           ...Model.schema(),
         });
         static relations = () => ({
-          foos: Bar.belongsToMany([Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')]),
+          foos: belongsToMany([Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')]),
         });
       }
-      class FooBar extends Table {
+      class FooBar extends Model {
         static table = 'foobar';
         static schema = () => ({
           ...Model.schema(),

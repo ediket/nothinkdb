@@ -1,52 +1,79 @@
-import _ from 'lodash';
 import r from 'rethinkdb';
+import Joi from 'joi';
+import _ from 'lodash';
 import assert from 'assert';
-import Table from './Table';
+import uuid from 'node-uuid';
 import Link from './Link';
 
 
-export const HAS_ONE = Symbol('hasOne');
-export const BELONGS_TO = Symbol('belongsTo');
-export const HAS_MANY = Symbol('hasMany');
-export const BELONGS_TO_MANY = Symbol('belongsToMany');
-
-
-export default class Model extends Table {
+export default class Model {
+  static table = null;
+  static pk = 'id';
   static schema = () => ({
-    ...Table.schema(),
+    id: Joi.string().max(36).default(() => uuid.v4(), 'primary key').meta({ index: true }),
+    createdAt: Joi.date().default(() => new Date(), 'time of creation'),
+    updatedAt: Joi.date().default(() => new Date(), 'time of updated'),
   });
   static relations = () => ({});
 
-  static hasOne(link) {
-    assert.equal(link.constructor, Link);
-    assert.equal(link.right.Table, this);
-    return { link, type: HAS_ONE };
+  static validate(data = null) {
+    return !Joi.validate(data, this.schema()).error;
   }
 
-  static belongsTo(link) {
-    assert.equal(link.constructor, Link);
-    assert.equal(link.left.Table, this);
-    return { link, type: BELONGS_TO };
+  static attempt(data = null) {
+    return Joi.attempt(data, this.schema());
   }
 
-  static hasMany(link) {
-    assert.equal(link.constructor, Link);
-    assert.equal(link.right.Table, this);
-    return { link, type: HAS_MANY };
+  static hasField(fieldName) {
+    return _.has(this.schema(), fieldName);
   }
 
-  static belongsToMany(link) {
-    assert.equal(link.length, 2);
-    assert.equal(link[0].constructor, Link);
-    assert.equal(link[1].constructor, Link);
-    assert.equal(link[0].right.Table, this);
-    assert.equal(link[0].left.Table, link[1].left.Table);
-    return { link, type: BELONGS_TO_MANY };
+  static assertField(fieldName) {
+    return assert.ok(this.hasField(fieldName), `Field '${fieldName}' is unspecified in table '${this.table}'.`);
+  }
+
+  static getField(fieldName) {
+    this.assertField(fieldName);
+    return this.schema()[fieldName];
+  }
+
+  static getForeignKey(options = {}) {
+    const { fieldName = this.pk, isManyToMany = false } = options;
+    const field = this.getField(fieldName);
+
+    if (isManyToMany) {
+      return field.required();
+    }
+    return field.default(null);
+  }
+
+  static linkTo(RightModel, leftField, options = {}) {
+    const { index = RightModel.pk } = options;
+    return new Link({
+      left: { Model: this, field: leftField },
+      right: { Model: RightModel, field: index },
+    });
+  }
+
+  static linkedBy(LeftModel, leftField, options) {
+    return LeftModel.linkTo(this, leftField, options);
+  }
+
+  static query() {
+    return r.table(this.table);
   }
 
   static async sync(connection) {
-    await super.sync(connection);
+    await this.ensureTable(connection);
     await this.ensureForeignKeys(connection);
+  }
+
+  static async ensureTable(connection) {
+    await r.branch(
+      r.tableList().contains(this.table).not(),
+      r.tableCreate(this.table),
+      null
+    ).run(connection);
   }
 
   static async ensureForeignKeys(connection) {
@@ -58,61 +85,20 @@ export default class Model extends Table {
     );
   }
 
-  queryRelation(as) {
-    const { link, type } = this.constructor.relations()[as];
-    if (type === HAS_ONE) {
-      return this.queryHasOne(link);
-    }
-    else if (type === BELONGS_TO) {
-      return this.queryBelongsTo(link);
-    }
-    else if (type === HAS_MANY) {
-      return this.queryHasMany(link);
-    }
-    else if (type === BELONGS_TO_MANY) {
-      return this.queryBelongsToMany(link);
-    }
-    throw new Error('Invalid relation type:', type);
-  }
-
-  queryHasOne(link) {
-    const { left, right } = link;
-    if (this.data[right.field] === null) return null;
-
-    const query = left.Table.query().getAll(this.data[right.field], { index: left.field });
-    return r.branch(query.count().gt(0), query.nth(0), {});
-  }
-
-  queryBelongsTo(link) {
-    const { left, right } = link;
-    if (this.data[left.field] === null) return null;
-
-    const query = right.Table.query().getAll(this.data[left.field], { index: right.field });
-    return r.branch(query.count().gt(0), query.nth(0), {});
-  }
-
-  queryHasMany(link) {
-    const { left, right } = link;
-    if (this.data[left.field] === null) return r.expr([]);
-
-    const query = left.Table.query().getAll(this.data[right.field], { index: left.field });
-    return query.coerceTo('array');
-  }
-
-  queryBelongsToMany(link) {
-    if (this.data[link[0].left.field] === null) return r.expr([]);
-
-    const query = link[0].left.Table.query()
-      .getAll(this.data[link[0].right.field], { index: link[0].left.field }).coerceTo('array')
-      .concatMap(function(row) {
-        return link[1].right.Table.query()
-          .getAll(row(link[1].left.field), { index: link[1].right.field }).coerceTo('array');
-      });
-    return query;
-  }
-
   constructor(data = {}, isSynced = false) {
-    super(data);
+    assert.ok(this.constructor.table, 'Model should have static property \'table\'.');
+    assert.ok(this.constructor.pk, 'Model should have static property \'pk\'.');
+    assert.ok(_.isObject(data), 'data should be object type.');
     this.isSynced = isSynced;
+    this.data = this.constructor.attempt(data);
+  }
+
+  getPk() {
+    return this.data[this.constructor.pk];
+  }
+
+  queryRelation(as, options = {}) {
+    const relation = this.constructor.relations()[as];
+    return relation.join(as, r.expr(this.data), options).do(r.row(as));
   }
 }
