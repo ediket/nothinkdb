@@ -18,7 +18,7 @@
     "rethinkdb",
     "orm"
   ],
-  "author": "ironhee",
+  "author": "ironhee <leechulhee95@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ironhee/nothinkdb/issues"
