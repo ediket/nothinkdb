@@ -5,9 +5,9 @@ import assert from 'assert';
 export default class Link {
   static validateLinkData(linkData) {
     return linkData &&
-      linkData.Model &&
+      linkData.Table &&
       linkData.field &&
-      linkData.Model.hasField(linkData.field);
+      linkData.Table.hasField(linkData.field);
   }
 
   static assertLinkData(linkData) {
@@ -21,11 +21,11 @@ export default class Link {
     ]);
   }
 
-  async ensureIndex(connection, { Model, field }) {
-    if (Model.pk === field) return;
+  async ensureIndex(connection, { Table, field }) {
+    if (Table.pk === field) return;
     await r.branch(
-      Model.query().indexList().contains(field).not(),
-      Model.query().indexCreate(field),
+      Table.query().indexList().contains(field).not(),
+      Table.query().indexCreate(field),
       null
     ).run(connection);
   }
