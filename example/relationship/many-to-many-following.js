@@ -23,7 +23,7 @@ const followingTable = new Table({
   }),
 });
 
-(async () => {
+async function run() {
   const connection = await r.connect({
     db: 'test',
   });
@@ -51,8 +51,9 @@ const followingTable = new Table({
   console.log(await loadUsersWithJoin());
 
   await connection.close();
-})()
-.catch(e => {
+}
+
+run().catch(e => {
   console.log(e);
   process.exit();
 });

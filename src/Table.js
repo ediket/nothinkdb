@@ -107,12 +107,11 @@ export default class Table {
   }
 
   query() {
-    assert.ok(this.table, 'Table should have property \'table\'.');
     return r.table(this.table);
   }
 
   insert(data) {
-    return this.query().insert(this.attempt(data));
+    return this.query().insert(data);
   }
 
   get(pk) {
