@@ -3,4 +3,3 @@ rethinkdb_data
 .*.swp
 lib
 *.log
-.mailmap
