@@ -207,7 +207,7 @@ describe('Table', () => {
         expect(() => Joi.assert('string', field)).to.not.throw(Error);
       });
 
-      it('should return default(null) schema when options.isManyToMany is not given', () => {
+      it('should return and default(null) schema when options.isManyToMany is not given', () => {
         class Foo extends Table {
           static table = 'foo';
           static schema = () => ({
@@ -216,6 +216,7 @@ describe('Table', () => {
         }
 
         const field = Foo.getForeignKey();
+        expect(field).to.be.ok;
         expect(Joi.attempt(undefined, field)).to.be.null;
       });
 
@@ -517,7 +518,7 @@ describe('Table', () => {
       expect(foo).to.deep.equal(fetchedBar.foos[0]);
     });
 
-    describe.only('addToRelation', () => {
+    describe('createRelation', () => {
       it('should add hasMany relation', async () => {
         class Foo extends Table {
           static table = 'foo';
@@ -542,7 +543,7 @@ describe('Table', () => {
         const bar = Bar.create({});
         await Foo.insert(foo).run(connection);
         await Bar.insert(bar).run(connection);
-        await Foo.addToRelation('bars', foo.id, bar.id).run(connection);
+        await Foo.createRelation('bars', foo.id, bar.id).run(connection);
 
         let fooQuery = Foo.get(foo.id);
         fooQuery = Foo.withJoin(fooQuery, { bars: true });
@@ -586,19 +587,19 @@ describe('Table', () => {
         const bar = Bar.create({});
         await Foo.insert(foo).run(connection);
         await Bar.insert(bar).run(connection);
-        await Foo.addToRelation('bars', foo.id, bar.id).run(connection);
+        await Foo.createRelation('bars', foo.id, bar.id).run(connection);
 
         const fooQuery = Foo.get(foo.id);
         const fetchedFoo = await Foo.withJoin(fooQuery, { bars: true }).run(connection);
-        expect(bar).to.deep.equal(fetchedFoo.bars[0]);
+        expect(bar.id).to.equal(fetchedFoo.bars[0].id);
 
         const barQuery = Bar.get(bar.id);
         const fetchedBar = await Bar.withJoin(barQuery, { foos: true }).run(connection);
-        expect(foo).to.deep.equal(fetchedBar.foos[0]);
+        expect(foo.id).to.equal(fetchedBar.foos[0].id);
       });
     });
 
-    describe('removeFromRelation', () => {
+    describe('removeRelation', () => {
       it('should remove hasMany relation', async () => {
         class Foo extends Table {
           static table = 'foo';
@@ -620,15 +621,21 @@ describe('Table', () => {
         await Bar.sync(connection);
 
         const foo = Foo.create({});
-        const bar = Bar.create({
-          fooId: foo.id,
-        });
+        const bar1 = Bar.create({});
+        const bar2 = Bar.create({});
         await Foo.insert(foo).run(connection);
-        await Bar.insert(bar).run(connection);
-        await foo.removeFromRelation('bars', bar.id).run(connection);
+        await Bar.insert(bar1).run(connection);
+        await Bar.insert(bar2).run(connection);
+        await Foo.createRelation('bars', foo.id, bar1.id).run(connection);
+        await Foo.createRelation('bars', foo.id, bar2.id).run(connection);
 
-        const bars = await foo.join('bars').run(connection);
-        expect(bars).to.have.length(0);
+        await Foo.removeRelation('bars', foo.id, bar1.id).run(connection);
+
+        let fooQuery = Foo.get(foo.id);
+        fooQuery = Foo.withJoin(fooQuery, { bars: true });
+        const fetchedFoo = await fooQuery.run(connection);
+        expect(fetchedFoo.bars).to.have.length(1);
+        expect(bar2.id).to.equal(fetchedFoo.bars[0].id);
       });
 
       it('should remove belongsToMany relation', async () => {
@@ -663,20 +670,25 @@ describe('Table', () => {
         await FooBar.sync(connection);
 
         const foo = Foo.create({});
-        const bar = Bar.create({});
-        const foobar = FooBar.create({
-          fooId: foo.id,
-          barId: bar.id,
-        });
+        const bar1 = Bar.create({});
+        const bar2 = Bar.create({});
         await Foo.insert(foo).run(connection);
-        await Bar.insert(bar).run(connection);
-        await FooBar.insert(foobar).run(connection);
-        await foo.removeFromRelation('bars', bar.id).run(connection);
+        await Bar.insert(bar1).run(connection);
+        await Bar.insert(bar2).run(connection);
+        await Foo.createRelation('bars', foo.id, bar1.id).run(connection);
+        await Foo.createRelation('bars', foo.id, bar2.id).run(connection);
 
-        const bars = await foo.join('bars').run(connection);
-        expect(bars).to.have.length(0);
-        const foos = await bar.join('foos').run(connection);
-        expect(foos).to.have.length(0);
+        await Foo.removeRelation('bars', foo.id, bar1.id).run(connection);
+
+        const fooQuery = Foo.get(foo.id);
+        const fetchedFoo = await Foo.withJoin(fooQuery, { bars: true }).run(connection);
+        expect(fetchedFoo.bars).to.have.length(1);
+        expect(bar2.id).to.equal(fetchedFoo.bars[0].id);
+
+        const barQuery = Bar.get(bar2.id);
+        const fetchedBar = await Bar.withJoin(barQuery, { foos: true }).run(connection);
+        expect(fetchedBar.foos).to.have.length(1);
+        expect(foo.id).to.equal(fetchedBar.foos[0].id);
       });
     });
   });

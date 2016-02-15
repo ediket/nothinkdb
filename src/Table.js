@@ -49,7 +49,7 @@ export default class Table {
     if (isManyToMany) {
       return field.required();
     }
-    return field.optional();
+    return field.allow(null).default(null);
   }
 
   static linkTo(RightTable, leftField, options = {}) {
@@ -142,16 +142,16 @@ export default class Table {
     }, query);
   }
 
-  static addToRelation(as, pk, otherPk) {
+  static createRelation(as, onePk, otherPk) {
     const relation = this.getRelation(as);
-    assert.ok(relation.add, 'unsupported relation.');
-    return relation.add(pk, otherPk);
+    assert.ok(relation.create, 'unsupported relation.');
+    return relation.create(onePk, otherPk);
   }
 
-  static removeFromRelation(as, pk, otherPk) {
+  static removeRelation(as, onePk, otherPk) {
     const relation = this.getRelation(as);
     assert.ok(relation.remove, 'unsupported relation.');
-    return relation.remove(otherPk);
+    return relation.remove(onePk, otherPk);
   }
 
   constructor(data = {}) {

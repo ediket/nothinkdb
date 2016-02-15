@@ -50,18 +50,18 @@ export function hasMany(link) {
       return { [as]: joinQuery };
     });
   }
-  function add(onePk, otherPk) {
+  function create(onePk, otherPk) {
     const { left, right } = link;
     return r.table(right.Table.table).get(onePk).do(function(rightRow) {
       return r.table(left.Table.table).get(otherPk).update({ [left.field]: rightRow(right.field) });
     });
   }
-  function remove(leftPk) {
+  function remove(onePk, leftPk) {
     const { left } = link;
     return r.table(left.Table.table).get(leftPk).update({ [left.field]: null });
   }
 
-  return { join, add, remove, link, TargetTable: left.Table, type: 'hasMany' };
+  return { join, create, remove, link, TargetTable: left.Table, type: 'hasMany' };
 }
 
 export function belongsToMany(link) {
@@ -82,19 +82,23 @@ export function belongsToMany(link) {
       return { [as]: joinQuery };
     });
   }
-  function add(onePk, otherPk) {
+  function create(onePk, otherPk) {
     const [link1, link2] = link;
     const Relation = link1.left.Table;
-    const relation = new Relation({
+    const relation = Relation.create({
       [link1.left.field]: onePk,
       [link2.left.field]: otherPk,
     });
-    return r.table(Relation.table).insert(relation.data, { conflict: 'replace' });
+    return r.table(Relation.table).insert(relation, { conflict: 'replace' });
   }
-  function remove(otherPk) {
+  function remove(onePk, otherPk) {
     const [link1, link2] = link;
     const Relation = link1.left.Table;
-    return r.table(Relation.table).getAll(otherPk, { index: link2.left.field }).delete();
+    return r.table(Relation.table)
+      .getAll(onePk, { index: link1.left.field })
+      .filter({ [link2.left.field]: otherPk })
+      // .getAll(otherPk, { index: link2.left.field })
+      .delete();
   }
-  return { join, add, remove, link, TargetTable: link2.right.Table, type: 'belongsToMany' };
+  return { join, create, remove, link, TargetTable: link2.right.Table, type: 'belongsToMany' };
 }
