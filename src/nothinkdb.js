@@ -1,7 +1,2 @@
-import Table from './Table';
-
-const nothinkdb = {
-  Table,
-};
-
-export default nothinkdb;
+export Table from './Table';
+export * from './relations';

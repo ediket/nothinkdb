@@ -97,12 +97,13 @@ export default class Table {
       this.query().indexCreate(field),
       null
     ).run(connection);
+    await this.query().indexWait(field).run(connection);
   }
 
   async syncRelations(connection) {
-    await Promise.all(
-      _.map(this.relations(), relation => relation.sync(connection))
-    );
+    await _.reduce(this.relations(), (promise, relation) => {
+      return promise.then(() => relation.sync(connection));
+    }, Promise.resolve());
   }
 
   query() {
@@ -152,9 +153,9 @@ export default class Table {
       query = this._withJoinOne(query, key, options);
       if (_.isObject(value)) {
         const relations = _.omitBy(value, (value, key) => _.startsWith(key, '_'));
-        const { TargetTable } = this.getRelation(key);
+        const { targetTable } = this.getRelation(key);
         query = query.merge(function(row) {
-          return { [key]: TargetTable.withJoin(row(key), relations) };
+          return { [key]: targetTable.withJoin(row(key), relations) };
         });
       }
       return query;

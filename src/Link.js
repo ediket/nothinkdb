@@ -10,14 +10,12 @@ export default class Link {
   }
 
   static assertLinkData(linkData) {
-    assert.ok(this.validateLinkData(linkData));
+    assert.ok(this.validateLinkData(linkData), 'invalid link data');
   }
 
   async sync(connection) {
-    await Promise.all([
-      this.syncTable(connection, this.right),
-      this.syncTable(connection, this.left),
-    ]);
+    await this.syncTable(connection, this.right);
+    await this.syncTable(connection, this.left);
   }
 
   async syncTable(connection, { table, field }) {

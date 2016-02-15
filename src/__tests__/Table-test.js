@@ -11,6 +11,8 @@ describe('Table', () => {
   let connection;
   before(async () => {
     connection = await r.connect({});
+    await r.branch(r.dbList().contains('test').not(), r.dbCreate('test'), null).run(connection);
+    r.dbCreate('test');
   });
 
   beforeEach(async () => {
@@ -277,40 +279,6 @@ describe('Table', () => {
       expect(foo2bar.right).to.deep.equal({
         table: fooTable, field: 'id',
       });
-    });
-  });
-
-  describe('sync', () => {
-    it('should create table and index', async () => {
-      // class fooTable extends Table {
-      //   static table = 'foo';
-      //   static schema = () => ({
-      //     ...Table.schema,
-      //   });
-      //   static relations = () => ({
-      //     bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
-      //   });
-      // }
-      // class barTable extends Table {
-      //   static table = 'bar';
-      //   static schema = () => ({
-      //     ...Table.schema,
-      //     fooId: fooTable.getForeignKey(),
-      //   });
-      // }
-      // await fooTable.sync(connection);
-      // await barTable.sync(connection);
-      //
-      // const foo = fooTable.create({});
-      // const bar = barTable.create({ fooId: foo.id });
-      //
-      // await fooTable.insert(foo).run(connection);
-      // await barTable.insert(bar).run(connection);
-      //
-      // let query = fooTable.get(foo.id);
-      // query = await fooTable.withJoin(query, { bar: true });
-      // const fetchedfooTable = await query.run(connection);
-      // expect(bar).to.deep.equal(fetchedfooTable.bar);
     });
   });
 
