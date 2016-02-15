@@ -1,8 +1,8 @@
-import Model from './Model';
+import Table from './Table';
 import Link from './Link';
 
 const nothinkdb = {
-  Model,
+  Table,
   Link,
 };
 

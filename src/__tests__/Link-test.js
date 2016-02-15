@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import Joi from 'joi';
 import Link from '../Link';
-import Model from '../Model';
+import Table from '../Table';
 
 
 describe('Link', () => {
   describe('constructor', () => {
-    class Foo extends Model {
+    class Foo extends Table {
       static table = 'foo';
       static schema = () => ({
         foo: Joi.string(),
@@ -16,11 +16,11 @@ describe('Link', () => {
 
     it('should create link', () => {
       const link = new Link({
-        left: { Model: Foo, field: 'foo' },
-        right: { Model: Foo, field: 'bar' },
+        left: { Table: Foo, field: 'foo' },
+        right: { Table: Foo, field: 'bar' },
       });
-      expect(link.left).to.deep.equal({ Model: Foo, field: 'foo' });
-      expect(link.right).to.deep.equal({ Model: Foo, field: 'bar' });
+      expect(link.left).to.deep.equal({ Table: Foo, field: 'foo' });
+      expect(link.right).to.deep.equal({ Table: Foo, field: 'bar' });
     });
 
     it('should throw Error when invalid data is given', () => {
@@ -30,20 +30,20 @@ describe('Link', () => {
         right: {},
       })).to.throw(Error);
       expect(() => new Link({
-        left: { Model: {}, field: null },
-        right: { Model: {}, field: null },
+        left: { Table: {}, field: null },
+        right: { Table: {}, field: null },
       })).to.throw(Error);
       expect(() => new Link({
-        left: { Model: Foo, field: null },
-        right: { Model: Foo, field: null },
+        left: { Table: Foo, field: null },
+        right: { Table: Foo, field: null },
       })).to.throw(Error);
       expect(() => new Link({
-        left: { Model: Foo, field: 'noop' },
-        right: { Model: Foo, field: 'noop' },
+        left: { Table: Foo, field: 'noop' },
+        right: { Table: Foo, field: 'noop' },
       })).to.throw(Error);
       expect(() => new Link({
-        left: { Model: Foo, field: 'foo' },
-        right: { Model: Foo, field: 'noop' },
+        left: { Table: Foo, field: 'foo' },
+        right: { Table: Foo, field: 'noop' },
       })).to.throw(Error);
     });
   });
