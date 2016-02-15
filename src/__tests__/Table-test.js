@@ -23,673 +23,698 @@ describe('Table', () => {
     await connection.close();
   });
 
-  describe('constructor', () => {
-    it('should throw Error if \'table\' is not overrided', () => {
+  describe('staic', () => {
+    describe('schema', () => {
+      it('has default property', () => {
+        expect(Table.schema).to.have.property('id');
+        expect(Table.schema).to.have.property('createdAt');
+        expect(Table.schema).to.have.property('updatedAt');
+      });
     });
   });
 
-  describe('static', () => {
-    describe('schema', () => {
-      it('has default property', () => {
-        class Base extends Table {
-          static table = 'base';
-          static schema = () => ({
-            ...Table.schema(),
-            name: Joi.string().default('hello'),
-          });
-        }
-        expect(Base.schema()).to.have.property('id');
-        expect(Base.schema()).to.have.property('createdAt');
-        expect(Base.schema()).to.have.property('updatedAt');
-        expect(Base.schema()).to.have.property('name');
+  describe('constructor', () => {
+    it('schema could be extended', () => {
+      const baseTable = new Table({
+        table: 'base',
+        schema: () => ({
+          ...Table.schema,
+          name: Joi.string().default('hello'),
+        }),
       });
+      expect(baseTable.schema()).to.have.property('id');
+      expect(baseTable.schema()).to.have.property('createdAt');
+      expect(baseTable.schema()).to.have.property('updatedAt');
+      expect(baseTable.schema()).to.have.property('name');
+    });
+  });
 
-      it('could be extended', () => {
-        class Base extends Table {
-          static table = 'base';
-          static schema = () => ({
-            ...Table.schema(),
-            name: Joi.string().default('hello'),
-          });
-        }
-        expect(Base.schema()).to.have.property('id');
-        expect(Base.schema()).to.have.property('createdAt');
-        expect(Base.schema()).to.have.property('updatedAt');
-        expect(Base.schema()).to.have.property('name');
-      });
+  describe('validate', () => {
+    const fooTable = new Table({
+      table: 'foo',
+      schema: () => ({
+        name: Joi.string().required(),
+      }),
     });
 
-    describe('validate', () => {
-      class Foo extends Table {
-        static table = 'foo';
-        static schema = () => ({
+    it('should return true when data is valid', () => {
+      expect(fooTable.validate({ name: 'foo' })).to.be.true;
+    });
+
+    it('should throw error when invalid', () => {
+      expect(fooTable.validate({})).to.be.false;
+    });
+  });
+
+  describe('attempt', () => {
+    const fooTable = new Table({
+      table: 'foo',
+      schema: () => ({
+        foo: Joi.string().default('foo'),
+        bar: Joi.string().required(),
+      }),
+    });
+
+    it('should return with default properties', () => {
+      const result = fooTable.attempt({ bar: 'bar' });
+      expect(result).to.have.property('foo', 'foo');
+      expect(result).to.have.property('bar', 'bar');
+    });
+
+    it('should throw error when invalid', () => {
+      expect(() => fooTable.attempt({})).to.throw(Error);
+    });
+  });
+
+  describe('create', () => {
+    const fooTable = new Table({
+      table: 'foo',
+      schema: () => ({
+        foo: Joi.string().default('foo'),
+        bar: Joi.string().required(),
+      }),
+    });
+
+    it('should return with default properties', () => {
+      const result = fooTable.create({ bar: 'bar' });
+      expect(result).to.have.property('foo', 'foo');
+      expect(result).to.have.property('bar', 'bar');
+    });
+
+    it('should throw error when invalid', () => {
+      expect(() => fooTable.create({})).to.throw(Error);
+    });
+  });
+
+  describe('hasField', () => {
+    it('should return true when specified fieldName is given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          name: Joi.string(),
+        }),
+      });
+      expect(fooTable.hasField('name')).to.be.true;
+    });
+
+    it('should return false when unspecified fieldName is given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({}),
+      });
+      expect(fooTable.hasField('name')).to.be.false;
+    });
+  });
+
+  describe('assertField', () => {
+    it('should not throw error when specified fieldName is given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          name: Joi.string(),
+        }),
+      });
+      expect(() => fooTable.assertField('name')).to.not.throw(Error);
+    });
+
+    it('should throw error when unspecified fieldName is given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({}),
+      });
+      expect(() => fooTable.assertField('name')).to.throw(Error);
+    });
+  });
+
+  describe('getField', () => {
+    it('should return field schema when specified fieldName is given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          name: Joi.string(),
+        }),
+      });
+
+      const field = fooTable.getField('name');
+      expect(field).to.be.ok;
+      expect(() => Joi.assert('string', field)).to.not.throw(Error);
+    });
+
+    it('should throw error when unspecified fieldName is given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({}),
+      });
+      expect(() => fooTable.getField('name')).to.throw(Error);
+    });
+  });
+
+  describe('getForeignKey', () => {
+    it('should return primary key schema when any argument is not given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        pk: 'name',
+        schema: () => ({
+          name: Joi.string().default(() => uuid.v4(), 'pk'),
+        }),
+      });
+
+      const field = fooTable.getForeignKey();
+      expect(field).to.be.ok;
+      expect(() => Joi.assert('string', field)).to.not.throw(Error);
+    });
+
+    it('should return field schema when options.fieldName is given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          name: Joi.string().default(() => uuid.v4(), 'pk'),
+        }),
+      });
+
+      const field = fooTable.getForeignKey({ fieldName: 'name' });
+      expect(field).to.be.ok;
+      expect(() => Joi.assert('string', field)).to.not.throw(Error);
+    });
+
+    it('should return and default(null) schema when options.isManyToMany is not given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+      });
+
+      const field = fooTable.getForeignKey();
+      expect(field).to.be.ok;
+      expect(Joi.attempt(undefined, field)).to.be.null;
+    });
+
+    it('should return required() field schema when options.isManyToMany is given', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+      });
+
+      const field = fooTable.getForeignKey({ isManyToMany: true });
+      expect(field).to.be.ok;
+      expect(() => Joi.assert(undefined, field)).to.throw(Error);
+    });
+  });
+
+  describe('linkTo', () => {
+    it('should return link', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+          barId: barTable.getForeignKey(),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+        }),
+      });
+
+      const foo2bar = fooTable.linkTo(barTable, 'barId');
+      expect(foo2bar).to.be.ok;
+      expect(foo2bar.constructor).to.equal(Link);
+      expect(foo2bar.left).to.deep.equal({
+        table: fooTable, field: 'barId',
+      });
+      expect(foo2bar.right).to.deep.equal({
+        table: barTable, field: 'id',
+      });
+    });
+  });
+
+  describe('linkedBy', () => {
+    it('should return reverse link', () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+      });
+
+      const foo2bar = fooTable.linkedBy(barTable, 'fooId');
+      expect(foo2bar).to.be.ok;
+      expect(foo2bar.constructor).to.equal(Link);
+      expect(foo2bar.left).to.deep.equal({
+        table: barTable, field: 'fooId',
+      });
+      expect(foo2bar.right).to.deep.equal({
+        table: fooTable, field: 'id',
+      });
+    });
+  });
+
+  describe('sync', () => {
+    it('should create table and index', async () => {
+      // class fooTable extends Table {
+      //   static table = 'foo';
+      //   static schema = () => ({
+      //     ...Table.schema,
+      //   });
+      //   static relations = () => ({
+      //     bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
+      //   });
+      // }
+      // class barTable extends Table {
+      //   static table = 'bar';
+      //   static schema = () => ({
+      //     ...Table.schema,
+      //     fooId: fooTable.getForeignKey(),
+      //   });
+      // }
+      // await fooTable.sync(connection);
+      // await barTable.sync(connection);
+      //
+      // const foo = fooTable.create({});
+      // const bar = barTable.create({ fooId: foo.id });
+      //
+      // await fooTable.insert(foo).run(connection);
+      // await barTable.insert(bar).run(connection);
+      //
+      // let query = fooTable.get(foo.id);
+      // query = await fooTable.withJoin(query, { bar: true });
+      // const fetchedfooTable = await query.run(connection);
+      // expect(bar).to.deep.equal(fetchedfooTable.bar);
+    });
+  });
+
+  describe('query', () => {
+    it('should return table query', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+      });
+      const config = await fooTable.query().config().run(connection);
+      expect(config).to.have.property('name', 'foo');
+    });
+  });
+
+  describe('insert', () => {
+    it('should insert data into database', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
           name: Joi.string().required(),
-        });
-      }
-
-      it('should return true when data is valid', () => {
-        expect(Foo.validate({ name: 'foo' })).to.be.true;
+        }),
       });
-
-      it('should throw error when invalid', () => {
-        expect(Foo.validate({})).to.be.false;
-      });
+      const foo = fooTable.attempt({ name: 'foo' });
+      await fooTable.insert(foo).run(connection);
+      const fetchedfooTable = await fooTable.query().get(foo.id).run(connection);
+      expect(foo).to.deep.equal(fetchedfooTable);
     });
+  });
 
-    describe('attempt', () => {
-      class Foo extends Table {
-        static table = 'foo';
-        static schema = () => ({
-          foo: Joi.string().default('foo'),
-          bar: Joi.string().required(),
-        });
-      }
-
-      it('should return with default properties', () => {
-        const result = Foo.attempt({ bar: 'bar' });
-        expect(result).to.have.property('foo', 'foo');
-        expect(result).to.have.property('bar', 'bar');
+  describe('get', () => {
+    it('should get data from database', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+          name: Joi.string().required(),
+        }),
       });
-
-      it('should throw error when invalid', () => {
-        expect(() => Foo.attempt({})).to.throw(Error);
-      });
+      const foo = fooTable.attempt({ name: 'foo' });
+      await fooTable.insert(foo).run(connection);
+      const fetchedfooTable = await fooTable.get(foo.id).run(connection);
+      expect(foo).to.deep.equal(fetchedfooTable);
     });
+  });
 
-    describe('create', () => {
-      class Foo extends Table {
-        static table = 'foo';
-        static schema = () => ({
-          foo: Joi.string().default('foo'),
-          bar: Joi.string().required(),
-        });
-      }
-
-      it('should return with default properties', () => {
-        const result = Foo.create({ bar: 'bar' });
-        expect(result).to.have.property('foo', 'foo');
-        expect(result).to.have.property('bar', 'bar');
+  describe('update', () => {
+    it('should update data into database', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+          name: Joi.string().required(),
+        }),
       });
-
-      it('should throw error when invalid', () => {
-        expect(() => Foo.create({})).to.throw(Error);
-      });
+      const foo = fooTable.attempt({ name: 'foo' });
+      await fooTable.insert(foo).run(connection);
+      await fooTable.update(foo.id, { name: 'bar' }).run(connection);
+      const fetchedfooTable = await fooTable.get(foo.id).run(connection);
+      expect(fetchedfooTable).to.have.property('name', 'bar');
     });
+  });
 
-    describe('hasField', () => {
-      it('should return true when specified fieldName is given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            name: Joi.string(),
-          });
-        }
-        expect(Foo.hasField('name')).to.be.true;
+  describe('delete', () => {
+    it('should delete data from database', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+          name: Joi.string().required(),
+        }),
       });
-
-      it('should return false when unspecified fieldName is given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({});
-        }
-        expect(Foo.hasField('name')).to.be.false;
-      });
+      const foo = fooTable.attempt({ name: 'foo' });
+      await fooTable.insert(foo).run(connection);
+      await fooTable.delete(foo.id).run(connection);
+      const fetchedfooTable = await fooTable.query().get(foo.id).run(connection);
+      expect(fetchedfooTable).to.be.null;
     });
+  });
 
-    describe('assertField', () => {
-      it('should not throw error when specified fieldName is given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            name: Joi.string(),
-          });
-        }
-        expect(() => Foo.assertField('name')).to.not.throw(Error);
+  describe('withJoin', () => {
+    it('should query hasOne relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
+        }),
       });
-
-      it('should throw error when unspecified fieldName is given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({});
-        }
-        expect(() => Foo.assertField('name')).to.throw(Error);
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+          fooId: fooTable.getForeignKey(),
+        }),
       });
-    });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
 
-    describe('getField', () => {
-      it('should return field schema when specified fieldName is given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            name: Joi.string(),
-          });
-        }
+      const foo = fooTable.create({});
+      const bar = barTable.create({ fooId: foo.id });
 
-        const field = Foo.getField('name');
-        expect(field).to.be.ok;
-        expect(() => Joi.assert('string', field)).to.not.throw(Error);
-      });
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
 
-      it('should throw error when unspecified fieldName is given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({});
-        }
-        expect(() => Foo.getField('name')).to.throw(Error);
-      });
-    });
-
-    describe('getForeignKey', () => {
-      it('should return primary key schema when any argument is not given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static pk = 'name';
-          static schema = () => ({
-            name: Joi.string().default(() => uuid.v4(), 'pk'),
-          });
-        }
-
-        const field = Foo.getForeignKey();
-        expect(field).to.be.ok;
-        expect(() => Joi.assert('string', field)).to.not.throw(Error);
-      });
-
-      it('should return field schema when options.fieldName is given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            name: Joi.string().default(() => uuid.v4(), 'pk'),
-          });
-        }
-
-        const field = Foo.getForeignKey({ fieldName: 'name' });
-        expect(field).to.be.ok;
-        expect(() => Joi.assert('string', field)).to.not.throw(Error);
-      });
-
-      it('should return and default(null) schema when options.isManyToMany is not given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-        }
-
-        const field = Foo.getForeignKey();
-        expect(field).to.be.ok;
-        expect(Joi.attempt(undefined, field)).to.be.null;
-      });
-
-      it('should return required() field schema when options.isManyToMany is given', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-        }
-
-        const field = Foo.getForeignKey({ isManyToMany: true });
-        expect(field).to.be.ok;
-        expect(() => Joi.assert(undefined, field)).to.throw(Error);
-      });
-    });
-
-    describe('linkTo', () => {
-      it('should return link', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-            barId: Bar.getForeignKey(),
-          });
-        }
-        class Bar extends Table {
-          static table = 'bar';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-        }
-        const foo2bar = Foo.linkTo(Bar, 'barId');
-        expect(foo2bar).to.be.ok;
-        expect(foo2bar.constructor).to.equal(Link);
-        expect(foo2bar.left).to.deep.equal({
-          Table: Foo, field: 'barId',
-        });
-        expect(foo2bar.right).to.deep.equal({
-          Table: Bar, field: 'id',
-        });
-      });
-    });
-
-    describe('linkedBy', () => {
-      it('should return reverse link', () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-        }
-        class Bar extends Table {
-          static table = 'bar';
-          static schema = () => ({
-            ...Table.schema(),
-            fooId: Foo.getForeignKey(),
-          });
-        }
-        const foo2bar = Foo.linkedBy(Bar, 'fooId');
-        expect(foo2bar).to.be.ok;
-        expect(foo2bar.constructor).to.equal(Link);
-        expect(foo2bar.left).to.deep.equal({
-          Table: Bar, field: 'fooId',
-        });
-        expect(foo2bar.right).to.deep.equal({
-          Table: Foo, field: 'id',
-        });
-      });
-    });
-
-    describe('query', () => {
-      it('should return table query', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-        }
-        const config = await Foo.query().config().run(connection);
-        expect(config).to.have.property('name', 'foo');
-      });
-    });
-
-    describe('insert', () => {
-      it('should insert data into database', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-            name: Joi.string().required(),
-          });
-        }
-        const foo = Foo.attempt({ name: 'foo' });
-        await Foo.insert(foo).run(connection);
-        const fetchedFoo = await Foo.query().get(foo.id).run(connection);
-        expect(foo).to.deep.equal(fetchedFoo);
-      });
-    });
-
-    describe('get', () => {
-      it('should get data from database', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-            name: Joi.string().required(),
-          });
-        }
-        const foo = Foo.attempt({ name: 'foo' });
-        await Foo.insert(foo).run(connection);
-        const fetchedFoo = await Foo.get(foo.id).run(connection);
-        expect(foo).to.deep.equal(fetchedFoo);
-      });
-    });
-
-    describe('update', () => {
-      it('should update data into database', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-            name: Joi.string().required(),
-          });
-        }
-        const foo = Foo.attempt({ name: 'foo' });
-        await Foo.insert(foo).run(connection);
-        await Foo.update(foo.id, { name: 'bar' }).run(connection);
-        const fetchedFoo = await Foo.get(foo.id).run(connection);
-        expect(fetchedFoo).to.have.property('name', 'bar');
-      });
-    });
-
-    describe('delete', () => {
-      it('should delete data from database', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-            name: Joi.string().required(),
-          });
-        }
-        const foo = Foo.attempt({ name: 'foo' });
-        await Foo.insert(foo).run(connection);
-        await Foo.delete(foo.id).run(connection);
-        const fetchedFoo = await Foo.query().get(foo.id).run(connection);
-        expect(fetchedFoo).to.be.null;
-      });
-    });
-
-    describe('withJoin', () => {
-      it('should query hasOne relation', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-          static relations = () => ({
-            bar: hasOne(Foo.linkedBy(Bar, 'fooId')),
-          });
-        }
-        class Bar extends Table {
-          static table = 'bar';
-          static schema = () => ({
-            ...Table.schema(),
-            fooId: Foo.getForeignKey(),
-          });
-        }
-        await Foo.sync(connection);
-        await Bar.sync(connection);
-
-        const foo = Foo.create({});
-        const bar = Bar.create({ fooId: foo.id });
-
-        await Foo.insert(foo).run(connection);
-        await Bar.insert(bar).run(connection);
-
-        let query = Foo.get(foo.id);
-        query = await Foo.withJoin(query, { bar: true });
-        const fetchedFoo = await query.run(connection);
-        expect(bar).to.deep.equal(fetchedFoo.bar);
-      });
+      let query = fooTable.get(foo.id);
+      query = await fooTable.withJoin(query, { bar: true });
+      const fetchedfooTable = await query.run(connection);
+      expect(bar).to.deep.equal(fetchedfooTable.bar);
     });
 
     it('should query belongsTo relation', async () => {
-      class Foo extends Table {
-        static table = 'foo';
-        static schema = () => ({
-          ...Table.schema(),
-          barId: Bar.getForeignKey(),
-        });
-        static relations = () => ({
-          bar: belongsTo(Foo.linkTo(Bar, 'barId')),
-        });
-      }
-      class Bar extends Table {
-        static table = 'bar';
-        static schema = () => ({
-          ...Table.schema(),
-        });
-      }
-      await Foo.sync(connection);
-      await Bar.sync(connection);
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+          barId: barTable.getForeignKey(),
+        }),
+        relations: () => ({
+          bar: belongsTo(fooTable.linkTo(barTable, 'barId')),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
 
-      const bar = Bar.create({});
-      const foo = Foo.create({ barId: bar.id });
+      const bar = barTable.create({});
+      const foo = fooTable.create({ barId: bar.id });
 
-      await Foo.insert(foo).run(connection);
-      await Bar.insert(bar).run(connection);
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
 
-      let query = Foo.get(foo.id);
-      query = Foo.withJoin(query, { bar: true });
-      const fetchedFoo = await query.run(connection);
-      expect(bar).to.deep.equal(fetchedFoo.bar);
+      let query = fooTable.get(foo.id);
+      query = fooTable.withJoin(query, { bar: true });
+      const fetchedfooTable = await query.run(connection);
+      expect(bar).to.deep.equal(fetchedfooTable.bar);
     });
 
     it('should query hasMany relation', async () => {
-      class Foo extends Table {
-        static table = 'foo';
-        static schema = () => ({
-          ...Table.schema(),
-        });
-        static relations = () => ({
-          bars: hasMany(Foo.linkedBy(Bar, 'fooId')),
-        });
-      }
-      class Bar extends Table {
-        static table = 'bar';
-        static schema = () => ({
-          ...Table.schema(),
-          fooId: Foo.getForeignKey(),
-        });
-      }
-      await Foo.sync(connection);
-      await Bar.sync(connection);
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          bars: hasMany(fooTable.linkedBy(barTable, 'fooId')),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
 
-      const foo = Foo.create({});
-      const bar = Bar.create({ fooId: foo.id });
+      const foo = fooTable.create({});
+      const bar = barTable.create({ fooId: foo.id });
 
-      await Foo.insert(foo).run(connection);
-      await Bar.insert(bar).run(connection);
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
 
-      let query = Foo.get(foo.id);
-      query = Foo.withJoin(query, { bars: true });
-      const fetchedFoo = await query.run(connection);
-      expect(fetchedFoo.bars).to.have.length(1);
-      expect(bar).to.deep.equal(fetchedFoo.bars[0]);
+      let query = fooTable.get(foo.id);
+      query = fooTable.withJoin(query, { bars: true });
+      const fetchedfooTable = await query.run(connection);
+      expect(fetchedfooTable.bars).to.have.length(1);
+      expect(bar).to.deep.equal(fetchedfooTable.bars[0]);
     });
 
     it('should query belongsToMany relation', async () => {
-      class Foo extends Table {
-        static table = 'foo';
-        static schema = () => ({
-          ...Table.schema(),
-        });
-        static relations = () => ({
-          bars: belongsToMany([Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')]),
-        });
-      }
-      class Bar extends Table {
-        static table = 'bar';
-        static schema = () => ({
-          ...Table.schema(),
-        });
-        static relations = () => ({
-          foos: belongsToMany([Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')]),
-        });
-      }
-      class FooBar extends Table {
-        static table = 'foobar';
-        static schema = () => ({
-          ...Table.schema(),
-          fooId: Foo.getForeignKey({ isManyToMany: true }),
-          barId: Bar.getForeignKey({ isManyToMany: true }),
-        });
-      }
-      await Foo.sync(connection);
-      await Bar.sync(connection);
-      await FooBar.sync(connection);
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          bars: belongsToMany([fooTable.linkedBy(foobarTable, 'fooId'), foobarTable.linkTo(barTable, 'barId')]),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          foos: belongsToMany([barTable.linkedBy(foobarTable, 'barId'), foobarTable.linkTo(fooTable, 'fooId')]),
+        }),
+      });
+      const foobarTable = new Table({
+        table: 'foobar',
+        schema: () => ({
+          ...Table.schema,
+          fooId: fooTable.getForeignKey({ isManyToMany: true }),
+          barId: barTable.getForeignKey({ isManyToMany: true }),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+      await foobarTable.sync(connection);
 
-      const foo = Foo.create({});
-      const bar = Bar.create({});
-      const foobar = FooBar.create({ fooId: foo.id, barId: bar.id });
+      const foo = fooTable.create({});
+      const bar = barTable.create({});
+      const foobar = foobarTable.create({ fooId: foo.id, barId: bar.id });
 
-      await Foo.insert(foo).run(connection);
-      await Bar.insert(bar).run(connection);
-      await FooBar.insert(foobar).run(connection);
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+      await foobarTable.insert(foobar).run(connection);
 
-      let query = Foo.get(foo.id);
-      query = Foo.withJoin(query, { bars: true });
-      const fetchedFoo = await query.run(connection);
-      expect(fetchedFoo.bars).to.have.length(1);
-      expect(bar).to.deep.equal(fetchedFoo.bars[0]);
+      let query = fooTable.get(foo.id);
+      query = fooTable.withJoin(query, { bars: true });
+      const fetchedfooTable = await query.run(connection);
+      expect(fetchedfooTable.bars).to.have.length(1);
+      expect(bar).to.deep.equal(fetchedfooTable.bars[0]);
 
-      query = Bar.get(bar.id);
-      query = Bar.withJoin(query, { foos: true });
-      const fetchedBar = await query.run(connection);
-      expect(fetchedBar.foos).to.have.length(1);
-      expect(foo).to.deep.equal(fetchedBar.foos[0]);
+      query = barTable.get(bar.id);
+      query = barTable.withJoin(query, { foos: true });
+      const fetchedbarTable = await query.run(connection);
+      expect(fetchedbarTable.foos).to.have.length(1);
+      expect(foo).to.deep.equal(fetchedbarTable.foos[0]);
+    });
+  });
+
+  describe('createRelation', () => {
+    it('should add hasMany relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          bars: hasMany(fooTable.linkedBy(barTable, 'fooId')),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+
+      const foo = fooTable.create({});
+      const bar = barTable.create({});
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+      await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+
+      let fooQuery = fooTable.get(foo.id);
+      fooQuery = fooTable.withJoin(fooQuery, { bars: true });
+      const fetchedfooTable = await fooQuery.run(connection);
+      expect(fetchedfooTable.bars).to.have.length(1);
+      expect(fetchedfooTable.bars[0]).to.have.property('fooId', foo.id);
     });
 
-    describe('createRelation', () => {
-      it('should add hasMany relation', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-          static relations = () => ({
-            bars: hasMany(Foo.linkedBy(Bar, 'fooId')),
-          });
-        }
-        class Bar extends Table {
-          static table = 'bar';
-          static schema = () => ({
-            ...Table.schema(),
-            fooId: Foo.getForeignKey(),
-          });
-        }
-        await Foo.sync(connection);
-        await Bar.sync(connection);
-
-        const foo = Foo.create({});
-        const bar = Bar.create({});
-        await Foo.insert(foo).run(connection);
-        await Bar.insert(bar).run(connection);
-        await Foo.createRelation('bars', foo.id, bar.id).run(connection);
-
-        let fooQuery = Foo.get(foo.id);
-        fooQuery = Foo.withJoin(fooQuery, { bars: true });
-        const fetchedFoo = await fooQuery.run(connection);
-        expect(fetchedFoo.bars).to.have.length(1);
-        expect(fetchedFoo.bars[0]).to.have.property('fooId', foo.id);
+    it('should add belongsToMany relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          bars: belongsToMany([fooTable.linkedBy(foobarTable, 'fooId'), foobarTable.linkTo(barTable, 'barId')]),
+        }),
       });
-
-      it('should add belongsToMany relation', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-          static relations = () => ({
-            bars: belongsToMany([Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')]),
-          });
-        }
-        class Bar extends Table {
-          static table = 'bar';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-          static relations = () => ({
-            foos: belongsToMany([Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')]),
-          });
-        }
-        class FooBar extends Table {
-          static table = 'foobar';
-          static schema = () => ({
-            ...Table.schema(),
-            fooId: Foo.getForeignKey({ isManyToMany: true }),
-            barId: Bar.getForeignKey({ isManyToMany: true }),
-          });
-        }
-        await Foo.sync(connection);
-        await Bar.sync(connection);
-        await FooBar.sync(connection);
-
-        const foo = Foo.create({});
-        const bar = Bar.create({});
-        await Foo.insert(foo).run(connection);
-        await Bar.insert(bar).run(connection);
-        await Foo.createRelation('bars', foo.id, bar.id).run(connection);
-
-        const fooQuery = Foo.get(foo.id);
-        const fetchedFoo = await Foo.withJoin(fooQuery, { bars: true }).run(connection);
-        expect(bar.id).to.equal(fetchedFoo.bars[0].id);
-
-        const barQuery = Bar.get(bar.id);
-        const fetchedBar = await Bar.withJoin(barQuery, { foos: true }).run(connection);
-        expect(foo.id).to.equal(fetchedBar.foos[0].id);
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          foos: belongsToMany([barTable.linkedBy(foobarTable, 'barId'), foobarTable.linkTo(fooTable, 'fooId')]),
+        }),
       });
+      const foobarTable = new Table({
+        table: 'foobar',
+        schema: () => ({
+          ...Table.schema,
+          fooId: fooTable.getForeignKey({ isManyToMany: true }),
+          barId: barTable.getForeignKey({ isManyToMany: true }),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+      await foobarTable.sync(connection);
+
+      const foo = fooTable.create({});
+      const bar = barTable.create({});
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+      await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+
+      const fooQuery = fooTable.get(foo.id);
+      const fetchedfooTable = await fooTable.withJoin(fooQuery, { bars: true }).run(connection);
+      expect(bar.id).to.equal(fetchedfooTable.bars[0].id);
+
+      const barQuery = barTable.get(bar.id);
+      const fetchedbarTable = await barTable.withJoin(barQuery, { foos: true }).run(connection);
+      expect(foo.id).to.equal(fetchedbarTable.foos[0].id);
+    });
+  });
+
+  describe('removeRelation', () => {
+    it('should remove hasMany relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          bars: hasMany(fooTable.linkedBy(barTable, 'fooId')),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+
+      const foo = fooTable.create({});
+      const bar1 = barTable.create({});
+      const bar2 = barTable.create({});
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar1).run(connection);
+      await barTable.insert(bar2).run(connection);
+      await fooTable.createRelation('bars', foo.id, bar1.id).run(connection);
+      await fooTable.createRelation('bars', foo.id, bar2.id).run(connection);
+
+      await fooTable.removeRelation('bars', foo.id, bar1.id).run(connection);
+
+      let fooQuery = fooTable.get(foo.id);
+      fooQuery = fooTable.withJoin(fooQuery, { bars: true });
+      const fetchedfooTable = await fooQuery.run(connection);
+      expect(fetchedfooTable.bars).to.have.length(1);
+      expect(bar2.id).to.equal(fetchedfooTable.bars[0].id);
     });
 
-    describe('removeRelation', () => {
-      it('should remove hasMany relation', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-          static relations = () => ({
-            bars: hasMany(Foo.linkedBy(Bar, 'fooId')),
-          });
-        }
-        class Bar extends Table {
-          static table = 'bar';
-          static schema = () => ({
-            ...Table.schema(),
-            fooId: Foo.getForeignKey(),
-          });
-        }
-        await Foo.sync(connection);
-        await Bar.sync(connection);
-
-        const foo = Foo.create({});
-        const bar1 = Bar.create({});
-        const bar2 = Bar.create({});
-        await Foo.insert(foo).run(connection);
-        await Bar.insert(bar1).run(connection);
-        await Bar.insert(bar2).run(connection);
-        await Foo.createRelation('bars', foo.id, bar1.id).run(connection);
-        await Foo.createRelation('bars', foo.id, bar2.id).run(connection);
-
-        await Foo.removeRelation('bars', foo.id, bar1.id).run(connection);
-
-        let fooQuery = Foo.get(foo.id);
-        fooQuery = Foo.withJoin(fooQuery, { bars: true });
-        const fetchedFoo = await fooQuery.run(connection);
-        expect(fetchedFoo.bars).to.have.length(1);
-        expect(bar2.id).to.equal(fetchedFoo.bars[0].id);
+    it('should remove belongsToMany relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          bars: belongsToMany([fooTable.linkedBy(foobarTable, 'fooId'), foobarTable.linkTo(barTable, 'barId')]),
+        }),
       });
-
-      it('should remove belongsToMany relation', async () => {
-        class Foo extends Table {
-          static table = 'foo';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-          static relations = () => ({
-            bars: belongsToMany([Foo.linkedBy(FooBar, 'fooId'), FooBar.linkTo(Bar, 'barId')]),
-          });
-        }
-        class Bar extends Table {
-          static table = 'bar';
-          static schema = () => ({
-            ...Table.schema(),
-          });
-          static relations = () => ({
-            foos: belongsToMany([Bar.linkedBy(FooBar, 'barId'), FooBar.linkTo(Foo, 'fooId')]),
-          });
-        }
-        class FooBar extends Table {
-          static table = 'foobar';
-          static schema = () => ({
-            ...Table.schema(),
-            fooId: Foo.getForeignKey({ isManyToMany: true }),
-            barId: Bar.getForeignKey({ isManyToMany: true }),
-          });
-        }
-        await Foo.sync(connection);
-        await Bar.sync(connection);
-        await FooBar.sync(connection);
-
-        const foo = Foo.create({});
-        const bar1 = Bar.create({});
-        const bar2 = Bar.create({});
-        await Foo.insert(foo).run(connection);
-        await Bar.insert(bar1).run(connection);
-        await Bar.insert(bar2).run(connection);
-        await Foo.createRelation('bars', foo.id, bar1.id).run(connection);
-        await Foo.createRelation('bars', foo.id, bar2.id).run(connection);
-
-        await Foo.removeRelation('bars', foo.id, bar1.id).run(connection);
-
-        const fooQuery = Foo.get(foo.id);
-        const fetchedFoo = await Foo.withJoin(fooQuery, { bars: true }).run(connection);
-        expect(fetchedFoo.bars).to.have.length(1);
-        expect(bar2.id).to.equal(fetchedFoo.bars[0].id);
-
-        const barQuery = Bar.get(bar2.id);
-        const fetchedBar = await Bar.withJoin(barQuery, { foos: true }).run(connection);
-        expect(fetchedBar.foos).to.have.length(1);
-        expect(foo.id).to.equal(fetchedBar.foos[0].id);
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...Table.schema,
+        }),
+        relations: () => ({
+          foos: belongsToMany([barTable.linkedBy(foobarTable, 'barId'), foobarTable.linkTo(fooTable, 'fooId')]),
+        }),
       });
+      const foobarTable = new Table({
+        table: 'foobar',
+        schema: () => ({
+          ...Table.schema,
+          fooId: fooTable.getForeignKey({ isManyToMany: true }),
+          barId: barTable.getForeignKey({ isManyToMany: true }),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+      await foobarTable.sync(connection);
+
+      const foo = fooTable.create({});
+      const bar1 = barTable.create({});
+      const bar2 = barTable.create({});
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar1).run(connection);
+      await barTable.insert(bar2).run(connection);
+      await fooTable.createRelation('bars', foo.id, bar1.id).run(connection);
+      await fooTable.createRelation('bars', foo.id, bar2.id).run(connection);
+
+      await fooTable.removeRelation('bars', foo.id, bar1.id).run(connection);
+
+      const fooQuery = fooTable.get(foo.id);
+      const fetchedfooTable = await fooTable.withJoin(fooQuery, { bars: true }).run(connection);
+      expect(fetchedfooTable.bars).to.have.length(1);
+      expect(bar2.id).to.equal(fetchedfooTable.bars[0].id);
+
+      const barQuery = barTable.get(bar2.id);
+      const fetchedbarTable = await barTable.withJoin(barQuery, { foos: true }).run(connection);
+      expect(fetchedbarTable.foos).to.have.length(1);
+      expect(foo.id).to.equal(fetchedbarTable.foos[0].id);
     });
   });
 });

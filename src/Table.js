@@ -8,41 +8,54 @@ import Link from './Link';
 
 
 export default class Table {
-  static table = null;
   static pk = 'id';
-  static schema = () => ({
+  static schema = {
     id: Joi.string().max(36).default(() => uuid.v4(), 'primary key').meta({ index: true }),
     createdAt: Joi.date().default(() => new Date(), 'time of creation'),
     updatedAt: Joi.date().default(() => new Date(), 'time of updated'),
-  });
-  static relations = () => ({});
+  };
 
-  static validate(data = null) {
+  constructor(options = {}) {
+    const { table, pk, schema, relations } = Joi.attempt(options, {
+      table: Joi.string().required(),
+      pk: Joi.string().default(Table.pk),
+      schema: Joi.func().required(),
+      relations: Joi.func().default(() => () => ({}), 'relation'),
+    });
+    // assert.equal(_.has(schema(), pk), true, `'${pk}' is not specified in schema`);
+
+    this.table = table;
+    this.pk = pk;
+    this.schema = schema;
+    this.relations = relations;
+  }
+
+  validate(data = null) {
     return !Joi.validate(data, this.schema()).error;
   }
 
-  static attempt(data = null) {
+  attempt(data = null) {
     return Joi.attempt(data, this.schema());
   }
 
-  static create(data = null) {
+  create(data = null) {
     return this.attempt(data);
   }
 
-  static hasField(fieldName) {
+  hasField(fieldName) {
     return _.has(this.schema(), fieldName);
   }
 
-  static assertField(fieldName) {
+  assertField(fieldName) {
     return assert.ok(this.hasField(fieldName), `Field '${fieldName}' is unspecified in table '${this.table}'.`);
   }
 
-  static getField(fieldName) {
+  getField(fieldName) {
     this.assertField(fieldName);
     return this.schema()[fieldName];
   }
 
-  static getForeignKey(options = {}) {
+  getForeignKey(options = {}) {
     const { fieldName = this.pk, isManyToMany = false } = options;
     const field = this.getField(fieldName);
 
@@ -52,24 +65,24 @@ export default class Table {
     return field.allow(null).default(null);
   }
 
-  static linkTo(RightTable, leftField, options = {}) {
-    const { index = RightTable.pk } = options;
+  linkTo(rightTable, leftField, options = {}) {
+    const { index = rightTable.pk } = options;
     return new Link({
-      left: { Table: this, field: leftField },
-      right: { Table: RightTable, field: index },
+      left: { table: this, field: leftField },
+      right: { table: rightTable, field: index },
     });
   }
 
-  static linkedBy(LeftTable, leftField, options) {
-    return LeftTable.linkTo(this, leftField, options);
+  linkedBy(leftTable, leftField, options) {
+    return leftTable.linkTo(this, leftField, options);
   }
 
-  static async sync(connection) {
+  async sync(connection) {
     await this.ensureTable(connection);
-    await this.ensureForeignKeys(connection);
+    await this.syncRelations(connection);
   }
 
-  static async ensureTable(connection) {
+  async ensureTable(connection) {
     await r.branch(
       r.tableList().contains(this.table).not(),
       r.tableCreate(this.table),
@@ -77,48 +90,54 @@ export default class Table {
     ).run(connection);
   }
 
-  static async ensureForeignKeys(connection) {
+  async ensureIndex(connection, field) {
+    if (this.pk === field) return;
+    await r.branch(
+      this.query().indexList().contains(field).not(),
+      this.query().indexCreate(field),
+      null
+    ).run(connection);
+  }
+
+  async syncRelations(connection) {
     await Promise.all(
-      _.map(this.relations(), relation => {
-        const links = [].concat(relation.link);
-        return Promise.all(links.map(link => link.sync(connection)));
-      })
+      _.map(this.relations(), relation => relation.sync(connection))
     );
   }
 
-  static query() {
-    assert.ok(this.table, 'Table should have static property \'table\'.');
+  query() {
+    assert.ok(this.table, 'Table should have property \'table\'.');
     return r.table(this.table);
   }
 
-  static insert(data) {
+  insert(data) {
     return this.query().insert(this.attempt(data));
   }
 
-  static get(pk) {
+  get(pk) {
     return this.query().get(pk);
   }
 
-  static update(pk, data) {
+  update(pk, data) {
     return this.query().get(pk).update(data);
   }
 
-  static delete(pk) {
+  delete(pk) {
     return this.query().get(pk).delete();
   }
 
-  static getRelation(relation) {
+  getRelation(relation) {
     const relationObj = this.relations()[relation];
     assert.ok(relationObj, `Relation '${this.table}.${relation}' is not exist.`);
     return relationObj;
   }
 
-  static _withJoinOne(query, key, options) {
+  _withJoinOne(query, key, options) {
     const relation = this.getRelation(key);
     return relation.join(key, query, options);
   }
 
-  static withJoin(query, relations) {
+  withJoin(query, relations) {
     return _.reduce(relations, (query, value, key) => {
       let options = {};
       if (_.isObject(value)) {
@@ -142,20 +161,15 @@ export default class Table {
     }, query);
   }
 
-  static createRelation(as, onePk, otherPk) {
+  createRelation(as, onePk, otherPk) {
     const relation = this.getRelation(as);
     assert.ok(relation.create, 'unsupported relation.');
     return relation.create(onePk, otherPk);
   }
 
-  static removeRelation(as, onePk, otherPk) {
+  removeRelation(as, onePk, otherPk) {
     const relation = this.getRelation(as);
     assert.ok(relation.remove, 'unsupported relation.');
     return relation.remove(onePk, otherPk);
-  }
-
-  constructor(data = {}) {
-    assert.ok(_.isObject(data), 'data should be object type.');
-    Object.assign(this, this.constructor.create(data));
   }
 }

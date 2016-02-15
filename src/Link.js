@@ -1,13 +1,12 @@
-import r from 'rethinkdb';
 import assert from 'assert';
 
 
 export default class Link {
   static validateLinkData(linkData) {
     return linkData &&
-      linkData.Table &&
+      linkData.table &&
       linkData.field &&
-      linkData.Table.hasField(linkData.field);
+      linkData.table.hasField(linkData.field);
   }
 
   static assertLinkData(linkData) {
@@ -16,18 +15,14 @@ export default class Link {
 
   async sync(connection) {
     await Promise.all([
-      this.ensureIndex(connection, this.right),
-      this.ensureIndex(connection, this.left),
+      this.syncTable(connection, this.right),
+      this.syncTable(connection, this.left),
     ]);
   }
 
-  async ensureIndex(connection, { Table, field }) {
-    if (Table.pk === field) return;
-    await r.branch(
-      Table.query().indexList().contains(field).not(),
-      Table.query().indexCreate(field),
-      null
-    ).run(connection);
+  async syncTable(connection, { table, field }) {
+    await table.ensureTable(connection);
+    await table.ensureIndex(connection, field);
   }
 
   constructor(options = {}) {
