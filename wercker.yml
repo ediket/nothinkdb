@@ -1,9 +1,0 @@
-box: node:4.3
-# Services
-services:
-  - mies/rethinkdb
-build:
-  steps:
-    - bundle-install
-    - npm-install
-    - npm-test
