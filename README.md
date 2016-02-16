@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/nothinkdb.svg)](https://badge.fury.io/js/nothinkdb)
+
 # Nothinkdb
 
 Functional toolkit for [rethinkdb](https://www.rethinkdb.com/api/javascript/).
@@ -7,6 +9,12 @@ Functional toolkit for [rethinkdb](https://www.rethinkdb.com/api/javascript/).
 - fully customizable 1-n, 1-1, n-1, n-m relations. (create, remove, join).
 - ensure table, secondary index.
 - many useful query generator.
+
+## Install
+
+```bash
+npm install -S nothinkdb
+```
 
 ## Example
 
