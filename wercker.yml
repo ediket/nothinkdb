@@ -1,4 +1,7 @@
-box: ironhee/nothinkdb
+box: node:argon
+# Services
+services:
+    - mies/rethinkdb
 build:
   steps:
     - npm-install
