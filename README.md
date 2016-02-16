@@ -1,7 +1,5 @@
 [![npm version](https://badge.fury.io/js/nothinkdb.svg)](https://badge.fury.io/js/nothinkdb)
 
-[![wercker status](https://app.wercker.com/status/31cee263908028cf13850dc6a9141564/m "wercker status")](https://app.wercker.com/project/bykey/31cee263908028cf13850dc6a9141564)
-
 # Nothinkdb
 
 Functional toolkit for [rethinkdb](https://www.rethinkdb.com/api/javascript/).
