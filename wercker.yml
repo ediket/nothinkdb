@@ -1,4 +1,4 @@
-box: node/argon
+box: node:argon
 build:
   steps:
     - npm-install
