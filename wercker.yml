@@ -1,0 +1,5 @@
+box: node/argon
+build:
+  steps:
+    - npm-install
+    - npm-test
