@@ -1,4 +1,4 @@
-box: node:argon
+box: ironhee/nothinkdb
 build:
   steps:
     - npm-install
