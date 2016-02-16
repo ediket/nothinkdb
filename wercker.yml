@@ -1,8 +1,9 @@
-box: node:argon
+box: wercker/nodejs
 # Services
 services:
-    - mies/rethinkdb
+  - mies/rethinkdb
 build:
   steps:
+    - bundle-install
     - npm-install
     - npm-test
