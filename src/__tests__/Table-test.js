@@ -3,6 +3,7 @@ import Joi from 'joi';
 import uuid from 'node-uuid';
 import { expect } from 'chai';
 import Table from '../Table';
+import schema from '../schema';
 import Link from '../Link';
 import { hasOne, belongsTo, hasMany, belongsToMany } from '../relations';
 
@@ -25,22 +26,12 @@ describe('Table', () => {
     await connection.close();
   });
 
-  describe('staic', () => {
-    describe('schema', () => {
-      it('has default property', () => {
-        expect(Table.schema).to.have.property('id');
-        expect(Table.schema).to.have.property('createdAt');
-        expect(Table.schema).to.have.property('updatedAt');
-      });
-    });
-  });
-
   describe('constructor', () => {
     it('schema could be extended', () => {
       const baseTable = new Table({
         table: 'base',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           name: Joi.string().default('hello'),
         }),
       });
@@ -65,26 +56,6 @@ describe('Table', () => {
 
     it('should throw error when invalid', () => {
       expect(fooTable.validate({})).to.be.false;
-    });
-  });
-
-  describe('attempt', () => {
-    const fooTable = new Table({
-      table: 'foo',
-      schema: () => ({
-        foo: Joi.string().default('foo'),
-        bar: Joi.string().required(),
-      }),
-    });
-
-    it('should return with default properties', () => {
-      const result = fooTable.attempt({ bar: 'bar' });
-      expect(result).to.have.property('foo', 'foo');
-      expect(result).to.have.property('bar', 'bar');
-    });
-
-    it('should throw error when invalid', () => {
-      expect(() => fooTable.attempt({})).to.throw(Error);
     });
   });
 
@@ -203,7 +174,7 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
       });
 
@@ -216,7 +187,7 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
       });
 
@@ -231,14 +202,14 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           barId: barTable.getForeignKey(),
         }),
       });
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
       });
 
@@ -259,13 +230,13 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
       });
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           fooId: fooTable.getForeignKey(),
         }),
       });
@@ -287,7 +258,7 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
       });
       const config = await fooTable.query().config().run(connection);
@@ -300,14 +271,14 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           name: Joi.string().required(),
         }),
       });
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
-      const fetchedfooTable = await fooTable.query().get(foo.id).run(connection);
-      expect(foo).to.deep.equal(fetchedfooTable);
+      const fetchedfoo = await fooTable.query().get(foo.id).run(connection);
+      expect(foo).to.deep.equal(fetchedfoo);
     });
   });
 
@@ -316,14 +287,14 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           name: Joi.string().required(),
         }),
       });
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
-      const fetchedfooTable = await fooTable.get(foo.id).run(connection);
-      expect(foo).to.deep.equal(fetchedfooTable);
+      const fetchedfoo = await fooTable.get(foo.id).run(connection);
+      expect(foo).to.deep.equal(fetchedfoo);
     });
   });
 
@@ -332,15 +303,15 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           name: Joi.string().required(),
         }),
       });
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
       await fooTable.update(foo.id, { name: 'bar' }).run(connection);
-      const fetchedfooTable = await fooTable.get(foo.id).run(connection);
-      expect(fetchedfooTable).to.have.property('name', 'bar');
+      const fetchedfoo = await fooTable.get(foo.id).run(connection);
+      expect(fetchedfoo).to.have.property('name', 'bar');
     });
   });
 
@@ -349,15 +320,15 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           name: Joi.string().required(),
         }),
       });
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
       await fooTable.delete(foo.id).run(connection);
-      const fetchedfooTable = await fooTable.query().get(foo.id).run(connection);
-      expect(fetchedfooTable).to.be.null;
+      const fetchedfoo = await fooTable.query().get(foo.id).run(connection);
+      expect(fetchedfoo).to.be.null;
     });
   });
 
@@ -366,7 +337,7 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
@@ -375,7 +346,7 @@ describe('Table', () => {
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           fooId: fooTable.getForeignKey(),
         }),
       });
@@ -390,15 +361,15 @@ describe('Table', () => {
 
       let query = fooTable.get(foo.id);
       query = await fooTable.withJoin(query, { bar: true });
-      const fetchedfooTable = await query.run(connection);
-      expect(bar).to.deep.equal(fetchedfooTable.bar);
+      const fetchedfoo = await query.run(connection);
+      expect(bar).to.deep.equal(fetchedfoo.bar);
     });
 
     it('should query belongsTo relation', async () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           barId: barTable.getForeignKey(),
         }),
         relations: () => ({
@@ -408,7 +379,7 @@ describe('Table', () => {
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
       });
       await fooTable.sync(connection);
@@ -422,15 +393,15 @@ describe('Table', () => {
 
       let query = fooTable.get(foo.id);
       query = fooTable.withJoin(query, { bar: true });
-      const fetchedfooTable = await query.run(connection);
-      expect(bar).to.deep.equal(fetchedfooTable.bar);
+      const fetchedfoo = await query.run(connection);
+      expect(bar).to.deep.equal(fetchedfoo.bar);
     });
 
     it('should query hasMany relation', async () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           bars: hasMany(fooTable.linkedBy(barTable, 'fooId')),
@@ -439,7 +410,7 @@ describe('Table', () => {
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           fooId: fooTable.getForeignKey(),
         }),
       });
@@ -454,16 +425,16 @@ describe('Table', () => {
 
       let query = fooTable.get(foo.id);
       query = fooTable.withJoin(query, { bars: true });
-      const fetchedfooTable = await query.run(connection);
-      expect(fetchedfooTable.bars).to.have.length(1);
-      expect(bar).to.deep.equal(fetchedfooTable.bars[0]);
+      const fetchedfoo = await query.run(connection);
+      expect(fetchedfoo.bars).to.have.length(1);
+      expect(bar).to.deep.equal(fetchedfoo.bars[0]);
     });
 
     it('should query belongsToMany relation', async () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           bars: belongsToMany([fooTable.linkedBy(foobarTable, 'fooId'), foobarTable.linkTo(barTable, 'barId')]),
@@ -472,7 +443,7 @@ describe('Table', () => {
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           foos: belongsToMany([barTable.linkedBy(foobarTable, 'barId'), foobarTable.linkTo(fooTable, 'fooId')]),
@@ -481,7 +452,7 @@ describe('Table', () => {
       const foobarTable = new Table({
         table: 'foobar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           fooId: fooTable.getForeignKey({ isManyToMany: true }),
           barId: barTable.getForeignKey({ isManyToMany: true }),
         }),
@@ -500,9 +471,9 @@ describe('Table', () => {
 
       let query = fooTable.get(foo.id);
       query = fooTable.withJoin(query, { bars: true });
-      const fetchedfooTable = await query.run(connection);
-      expect(fetchedfooTable.bars).to.have.length(1);
-      expect(bar).to.deep.equal(fetchedfooTable.bars[0]);
+      const fetchedfoo = await query.run(connection);
+      expect(fetchedfoo.bars).to.have.length(1);
+      expect(bar).to.deep.equal(fetchedfoo.bars[0]);
 
       query = barTable.get(bar.id);
       query = barTable.withJoin(query, { foos: true });
@@ -517,7 +488,7 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           bars: hasMany(fooTable.linkedBy(barTable, 'fooId')),
@@ -526,7 +497,7 @@ describe('Table', () => {
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           fooId: fooTable.getForeignKey(),
         }),
       });
@@ -541,16 +512,16 @@ describe('Table', () => {
 
       let fooQuery = fooTable.get(foo.id);
       fooQuery = fooTable.withJoin(fooQuery, { bars: true });
-      const fetchedfooTable = await fooQuery.run(connection);
-      expect(fetchedfooTable.bars).to.have.length(1);
-      expect(fetchedfooTable.bars[0]).to.have.property('fooId', foo.id);
+      const fetchedfoo = await fooQuery.run(connection);
+      expect(fetchedfoo.bars).to.have.length(1);
+      expect(fetchedfoo.bars[0]).to.have.property('fooId', foo.id);
     });
 
     it('should add belongsToMany relation', async () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           bars: belongsToMany([fooTable.linkedBy(foobarTable, 'fooId'), foobarTable.linkTo(barTable, 'barId')]),
@@ -559,7 +530,7 @@ describe('Table', () => {
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           foos: belongsToMany([barTable.linkedBy(foobarTable, 'barId'), foobarTable.linkTo(fooTable, 'fooId')]),
@@ -568,7 +539,7 @@ describe('Table', () => {
       const foobarTable = new Table({
         table: 'foobar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           fooId: fooTable.getForeignKey({ isManyToMany: true }),
           barId: barTable.getForeignKey({ isManyToMany: true }),
         }),
@@ -584,8 +555,8 @@ describe('Table', () => {
       await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
 
       const fooQuery = fooTable.get(foo.id);
-      const fetchedfooTable = await fooTable.withJoin(fooQuery, { bars: true }).run(connection);
-      expect(bar.id).to.equal(fetchedfooTable.bars[0].id);
+      const fetchedfoo = await fooTable.withJoin(fooQuery, { bars: true }).run(connection);
+      expect(bar.id).to.equal(fetchedfoo.bars[0].id);
 
       const barQuery = barTable.get(bar.id);
       const fetchedbarTable = await barTable.withJoin(barQuery, { foos: true }).run(connection);
@@ -598,7 +569,7 @@ describe('Table', () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           bars: hasMany(fooTable.linkedBy(barTable, 'fooId')),
@@ -607,7 +578,7 @@ describe('Table', () => {
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           fooId: fooTable.getForeignKey(),
         }),
       });
@@ -627,16 +598,16 @@ describe('Table', () => {
 
       let fooQuery = fooTable.get(foo.id);
       fooQuery = fooTable.withJoin(fooQuery, { bars: true });
-      const fetchedfooTable = await fooQuery.run(connection);
-      expect(fetchedfooTable.bars).to.have.length(1);
-      expect(bar2.id).to.equal(fetchedfooTable.bars[0].id);
+      const fetchedfoo = await fooQuery.run(connection);
+      expect(fetchedfoo.bars).to.have.length(1);
+      expect(bar2.id).to.equal(fetchedfoo.bars[0].id);
     });
 
     it('should remove belongsToMany relation', async () => {
       const fooTable = new Table({
         table: 'foo',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           bars: belongsToMany([fooTable.linkedBy(foobarTable, 'fooId'), foobarTable.linkTo(barTable, 'barId')]),
@@ -645,7 +616,7 @@ describe('Table', () => {
       const barTable = new Table({
         table: 'bar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
         }),
         relations: () => ({
           foos: belongsToMany([barTable.linkedBy(foobarTable, 'barId'), foobarTable.linkTo(fooTable, 'fooId')]),
@@ -654,7 +625,7 @@ describe('Table', () => {
       const foobarTable = new Table({
         table: 'foobar',
         schema: () => ({
-          ...Table.schema,
+          ...schema,
           fooId: fooTable.getForeignKey({ isManyToMany: true }),
           barId: barTable.getForeignKey({ isManyToMany: true }),
         }),
@@ -675,9 +646,9 @@ describe('Table', () => {
       await fooTable.removeRelation('bars', foo.id, bar1.id).run(connection);
 
       const fooQuery = fooTable.get(foo.id);
-      const fetchedfooTable = await fooTable.withJoin(fooQuery, { bars: true }).run(connection);
-      expect(fetchedfooTable.bars).to.have.length(1);
-      expect(bar2.id).to.equal(fetchedfooTable.bars[0].id);
+      const fetchedfoo = await fooTable.withJoin(fooQuery, { bars: true }).run(connection);
+      expect(fetchedfoo.bars).to.have.length(1);
+      expect(bar2.id).to.equal(fetchedfoo.bars[0].id);
 
       const barQuery = barTable.get(bar2.id);
       const fetchedbarTable = await barTable.withJoin(barQuery, { foos: true }).run(connection);

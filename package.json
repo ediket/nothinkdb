@@ -1,7 +1,7 @@
 {
   "name": "nothinkdb",
   "version": "0.1.0",
-  "description": "ORM: Object-Rethinkdb-Mapping",
+  "description": "Functional toolkit for rethinkdb",
   "main": "lib/nothinkdb.js",
   "scripts": {
     "test": "mocha --require ./resources/mocha-require.js --timeout 20000 ./src/**/__tests__/*-test.js",
