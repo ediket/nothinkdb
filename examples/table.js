@@ -1,12 +1,13 @@
 import r from 'rethinkdb';
 import Joi from 'joi';
-import { Table } from '../';
+import { Table, schema } from '../';
 
 const userTable = new Table({
   table: 'user',
   schema: () => ({
-    ...Table.schema,
+    id: schema.id,
     name: Joi.string().required(),
+    isPremium: Joi.boolean().default(false),
   }),
 });
 
@@ -14,20 +15,25 @@ async function run() {
   // open rethinkdb connection
   const connection = await r.connect({ db: 'test' });
 
-  // sycn table with rethinkdb server
+  // sync table
   await userTable.sync(connection);
 
-  // create user data (locally)
-  const foo = userTable.create({ name: 'foo' });
-  const bar = userTable.create({ name: 'bar' });
+  // delete all users
+  await userTable.query().delete().run(connection);
 
-  // insert user data to rethinkdb server
-  await userTable.insert([foo, bar]).run(connection);
+  // create user data
+  const normalUser = userTable.create({ name: 'user1' });
+  const premiumUser = userTable.create({ name: 'user2', isPremium: true });
 
-  // getAll users with array (default is cursor)
+  // insert user data into rethinkdb server
+  await userTable.insert([
+    normalUser,
+    premiumUser,
+  ]).run(connection);
+
+  // getAll users
   const users = await userTable.query().coerceTo('array').run(connection);
 
-  // ... do something with users.
   console.log(users);
 
   // close rethinkdb connection

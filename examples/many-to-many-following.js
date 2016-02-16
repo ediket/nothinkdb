@@ -1,12 +1,12 @@
 /* eslint no-console: 0 */
 import r from 'rethinkdb';
-import { Table, belongsToMany } from '../';
+import { Table, schema, belongsToMany } from '../';
 import Joi from 'joi';
 
 const userTable = new Table({
   table: 'user',
   schema: () => ({
-    ...Table.schema,
+    ...schema,
     name: Joi.string().required(),
   }),
   relations: () => ({
@@ -46,8 +46,10 @@ async function run() {
   await userTable.insert(follower).run(connection);
 
   await userTable.createRelation('follower', followee.id, follower.id).run(connection);
+  console.log('after create:');
   console.log(await loadUsersWithJoin());
   await userTable.removeRelation('follower', followee.id, follower.id).run(connection);
+  console.log('after remove:');
   console.log(await loadUsersWithJoin());
 
   await connection.close();
