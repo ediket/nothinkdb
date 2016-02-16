@@ -24,7 +24,7 @@ async function run() {
   // insert user data to rethinkdb server
   await userTable.insert([foo, bar]).run(connection);
 
-
+  // getAll users with array (default is cursor)
   const users = await userTable.query().coerceTo('array').run(connection);
 
   // ... do something with users.

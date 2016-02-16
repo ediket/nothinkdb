@@ -2,6 +2,6 @@
 
 Simple ORM(Object-Rethinkdb-Mapping).
 
-# How?
+# Usage
 
-See `src/**/__tests__/*-test.js`;
+see *example/*, *src/__tests__/*
