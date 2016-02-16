@@ -4,11 +4,10 @@ Functional toolkit for [rethinkdb](https://www.rethinkdb.com/api/javascript/).
 
 # Feature
 
-Table
------
-- __schema__: handle schema with [joi](https://github.com/hapijs/joi)
-  - validate
-  - generate default value
+- __table__
+  - schema: handle schema with [joi](https://github.com/hapijs/joi)
+    - validate
+    - generate default value
 - __relations__
   - types
     - one-to-one: hasOne
@@ -21,7 +20,10 @@ Table
 - __sync__: create table, secondary index...
 - __query__: handle table data with rethinkdb.
 
+# API
 
-# Usage
+See the [API Reference](https://github.com/ironhee/nothinkdb/blob/master/API.md).
 
-see -example/-, -src/\_\_tests__/*
+# Example
+
+See the [Examples](https://github.com/ironhee/nothinkdb/tree/master/examples)
