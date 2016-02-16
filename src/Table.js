@@ -3,22 +3,14 @@ import r from 'rethinkdb';
 import Joi from 'joi';
 import _ from 'lodash';
 import assert from 'assert';
-import uuid from 'node-uuid';
 import Link from './Link';
 
 
 export default class Table {
-  static pk = 'id';
-  static schema = {
-    id: Joi.string().max(36).default(() => uuid.v4(), 'primary key').meta({ index: true }),
-    createdAt: Joi.date().default(() => new Date(), 'time of creation'),
-    updatedAt: Joi.date().default(() => new Date(), 'time of updated'),
-  };
-
   constructor(options = {}) {
     const { table, pk, schema, relations } = Joi.attempt(options, {
       table: Joi.string().required(),
-      pk: Joi.string().default(Table.pk),
+      pk: Joi.string().default('id'),
       schema: Joi.func().required(),
       relations: Joi.func().default(() => () => ({}), 'relation'),
     });
@@ -65,16 +57,16 @@ export default class Table {
     return field.allow(null).default(null);
   }
 
-  linkTo(rightTable, leftField, options = {}) {
-    const { index = rightTable.pk } = options;
+  linkTo(targetTable, leftField, options = {}) {
+    const { index = targetTable.pk } = options;
     return new Link({
       left: { table: this, field: leftField },
-      right: { table: rightTable, field: index },
+      right: { table: targetTable, field: index },
     });
   }
 
-  linkedBy(leftTable, leftField, options) {
-    return leftTable.linkTo(this, leftField, options);
+  linkedBy(targetTable, leftField, options) {
+    return targetTable.linkTo(this, leftField, options);
   }
 
   async sync(connection) {
