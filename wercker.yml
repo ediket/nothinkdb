@@ -1,4 +1,4 @@
-box: wercker/nodejs
+box: node:argon
 # Services
 services:
   - mies/rethinkdb
