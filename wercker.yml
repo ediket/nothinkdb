@@ -1,4 +1,4 @@
-box: node:argon
+box: node:4.3
 # Services
 services:
   - mies/rethinkdb
