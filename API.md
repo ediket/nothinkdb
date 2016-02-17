@@ -20,6 +20,7 @@
   - [`createRelation(relationName, onePk, otherPk)`](#createrelationrelationname-onepk-otherpk)
   - [`removeRelation(relationName, onePk, otherPk)`](#removerelationrelationname-onepk-otherpk)
   - [`withJoin(query, relations)`](#withjoinquery-relations)
+  - [`getRelated(pk, relationName)`](#getrelatedpk-relationname)
 - [schema](#schema)
 - [relations](#relations)
   - [`hasOne(link)`](#hasonelink)
@@ -233,6 +234,7 @@ await fooTable.get(foo.id).run(connection);  // returns null
 ### `removeRelation(relationName, onePk, otherPk)`
 
 ### `withJoin(query, relations)`
+### `getRelated(pk, relationName)`
 
 ```js
 import { Table, hasOne } from 'nothinkdb';
@@ -281,6 +283,14 @@ await query.run(connection);
   }
 */
 
+await fooTable.getRelated(foo.id, 'bar').run(connection);
+/*
+  returns {
+    id: 'barId',
+    name: 'bar',
+  }
+*/
+
 await fooTable.removeRelation('bar', foo.id, bar.id).run(connection);
 
 let query = fooTable.get(foo.id);
@@ -292,6 +302,11 @@ await query.run(connection);
     name: 'foo',
     bar: null,
   }
+*/
+
+await fooTable.getRelated(foo.id, 'bar').run(connection);
+/*
+  returns null
 */
 ```
 

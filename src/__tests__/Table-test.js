@@ -334,7 +334,7 @@ describe('Table', () => {
     });
   });
 
-  describe('withJoin', () => {
+  describe('withJoin & getRelated', () => {
     it('should query hasOne relation', async () => {
       const fooTable = new Table({
         table: 'foo',
@@ -365,6 +365,9 @@ describe('Table', () => {
       query = await fooTable.withJoin(query, { bar: true });
       const fetchedfoo = await query.run(connection);
       expect(bar).to.deep.equal(fetchedfoo.bar);
+
+      const fetchedBar = await fooTable.getRelated(foo.id, 'bar').run(connection);
+      expect(bar).to.deep.equal(fetchedBar);
     });
 
     it('should query belongsTo relation', async () => {
@@ -397,6 +400,9 @@ describe('Table', () => {
       query = fooTable.withJoin(query, { bar: true });
       const fetchedfoo = await query.run(connection);
       expect(bar).to.deep.equal(fetchedfoo.bar);
+
+      const fetchedBar = await fooTable.getRelated(foo.id, 'bar').run(connection);
+      expect(bar).to.deep.equal(fetchedBar);
     });
 
     it('should query hasMany relation', async () => {
@@ -430,6 +436,10 @@ describe('Table', () => {
       const fetchedfoo = await query.run(connection);
       expect(fetchedfoo.bars).to.have.length(1);
       expect(bar).to.deep.equal(fetchedfoo.bars[0]);
+
+      const fetchedBars = await fooTable.getRelated(foo.id, 'bars').run(connection);
+      expect(fetchedBars).to.have.length(1);
+      expect(bar).to.deep.equal(fetchedBars[0]);
     });
 
     it('should query belongsToMany relation', async () => {
@@ -477,11 +487,19 @@ describe('Table', () => {
       expect(fetchedfoo.bars).to.have.length(1);
       expect(bar).to.deep.equal(fetchedfoo.bars[0]);
 
+      const fetchedBars = await fooTable.getRelated(foo.id, 'bars').run(connection);
+      expect(fetchedBars).to.have.length(1);
+      expect(bar).to.deep.equal(fetchedBars[0]);
+
       query = barTable.get(bar.id);
       query = barTable.withJoin(query, { foos: true });
       const fetchedbarTable = await query.run(connection);
       expect(fetchedbarTable.foos).to.have.length(1);
       expect(foo).to.deep.equal(fetchedbarTable.foos[0]);
+
+      const fetchedFoos = await barTable.getRelated(bar.id, 'foos').run(connection);
+      expect(fetchedFoos).to.have.length(1);
+      expect(foo).to.deep.equal(fetchedFoos[0]);
     });
   });
 

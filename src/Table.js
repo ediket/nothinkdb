@@ -159,13 +159,18 @@ export default class Table {
     }, query);
   }
 
-  createRelation(as, onePk, otherPk) {
-    const relation = this.getRelation(as);
+  getRelated(pk, relationName) {
+    return this.withJoin(this.get(pk), { [relationName]: true })
+      .do(r.row(relationName));
+  }
+
+  createRelation(relationName, onePk, otherPk) {
+    const relation = this.getRelation(relationName);
     return relation.create(onePk, otherPk);
   }
 
-  removeRelation(as, onePk, otherPk) {
-    const relation = this.getRelation(as);
+  removeRelation(relationName, onePk, otherPk) {
+    const relation = this.getRelation(relationName);
     return relation.remove(onePk, otherPk);
   }
 }
