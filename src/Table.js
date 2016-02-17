@@ -104,24 +104,24 @@ export default class Table {
     return r.table(this.table);
   }
 
-  insert(data) {
-    return this.query().insert(data);
+  insert(data, ...options) {
+    return this.query().insert(data, ...options);
   }
 
   get(pk) {
     return this.query().get(pk);
   }
 
-  update(pk, data) {
+  update(pk, data, ...options) {
     const updateData = { ...data };
     if (this.hasField('updatedAt')) {
-      updateData.updatedAt = new Date();
+      updateData.updatedAt = r.now();
     }
-    return this.query().get(pk).update(updateData);
+    return this.query().get(pk).update(updateData, ...options);
   }
 
-  delete(pk) {
-    return this.query().get(pk).delete();
+  delete(pk, ...options) {
+    return this.query().get(pk).delete(...options);
   }
 
   getRelation(relation) {
@@ -161,13 +161,11 @@ export default class Table {
 
   createRelation(as, onePk, otherPk) {
     const relation = this.getRelation(as);
-    assert.ok(relation.create, 'unsupported relation.');
     return relation.create(onePk, otherPk);
   }
 
   removeRelation(as, onePk, otherPk) {
     const relation = this.getRelation(as);
-    assert.ok(relation.remove, 'unsupported relation.');
     return relation.remove(onePk, otherPk);
   }
 }

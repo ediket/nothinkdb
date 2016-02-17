@@ -486,6 +486,74 @@ describe('Table', () => {
   });
 
   describe('createRelation', () => {
+    it('should add hasOne relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...schema,
+        }),
+        relations: () => ({
+          bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+
+      const foo = fooTable.create({});
+      const bar = barTable.create({});
+
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+
+      await fooTable.createRelation('bar', foo.id, bar.id).run(connection);
+
+      let query = fooTable.get(foo.id);
+      query = await fooTable.withJoin(query, { bar: true });
+      const fetchedfoo = await query.run(connection);
+      expect(bar.id).to.equal(fetchedfoo.bar.id);
+    });
+
+    it('should add belongsTo relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...schema,
+          barId: barTable.getForeignKey(),
+        }),
+        relations: () => ({
+          bar: belongsTo(fooTable.linkTo(barTable, 'barId')),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...schema,
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+
+      const bar = barTable.create({});
+      const foo = fooTable.create({});
+
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+
+      await fooTable.createRelation('bar', foo.id, bar.id).run(connection);
+
+      let query = fooTable.get(foo.id);
+      query = fooTable.withJoin(query, { bar: true });
+      const fetchedfoo = await query.run(connection);
+      expect(bar.id).to.equal(fetchedfoo.bar.id);
+    });
+
     it('should add hasMany relation', async () => {
       const fooTable = new Table({
         table: 'foo',
@@ -567,6 +635,76 @@ describe('Table', () => {
   });
 
   describe('removeRelation', () => {
+    it('should remove hasOne relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...schema,
+        }),
+        relations: () => ({
+          bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+
+      const foo = fooTable.create({});
+      const bar = barTable.create({});
+
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+
+      await fooTable.createRelation('bar', foo.id, bar.id).run(connection);
+      await fooTable.removeRelation('bar', foo.id, bar.id).run(connection);
+
+      let query = fooTable.get(foo.id);
+      query = await fooTable.withJoin(query, { bar: true });
+      const fetchedfoo = await query.run(connection);
+      expect(fetchedfoo.bar).to.be.null;
+    });
+
+    it('should remove belongsTo relation', async () => {
+      const fooTable = new Table({
+        table: 'foo',
+        schema: () => ({
+          ...schema,
+          barId: barTable.getForeignKey(),
+        }),
+        relations: () => ({
+          bar: belongsTo(fooTable.linkTo(barTable, 'barId')),
+        }),
+      });
+      const barTable = new Table({
+        table: 'bar',
+        schema: () => ({
+          ...schema,
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+
+      const bar = barTable.create({});
+      const foo = fooTable.create({});
+
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+
+      await fooTable.createRelation('bar', foo.id, bar.id).run(connection);
+      await fooTable.removeRelation('bar', foo.id, bar.id).run(connection);
+
+      let query = fooTable.get(foo.id);
+      query = fooTable.withJoin(query, { bar: true });
+      const fetchedfoo = await query.run(connection);
+      expect(fetchedfoo.bar).to.be.null;
+    });
+
     it('should remove hasMany relation', async () => {
       const fooTable = new Table({
         table: 'foo',

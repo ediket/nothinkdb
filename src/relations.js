@@ -12,7 +12,11 @@ export function hasOne(link) {
     const { before = query => query } = options;
     return query.merge(function(row) {
       let joinQuery = before(left.table.query());
-      joinQuery = joinQuery.getAll(row(right.field), { index: left.field });
+      joinQuery = r.branch(
+        row(right.field),
+        joinQuery.getAll(row(right.field), { index: left.field }),
+        r.expr([]),
+      );
       joinQuery = r.branch(joinQuery.count().gt(0), joinQuery.nth(0), null);
       return { [as]: joinQuery };
     });
@@ -22,8 +26,22 @@ export function hasOne(link) {
     await link.sync(connection);
   }
 
+  function create(onePk, otherPk) {
+    const { left, right } = link;
+    return right.table.get(onePk).do(function(rightRow) {
+      return left.table.update(otherPk, { [left.field]: rightRow(right.field) });
+    });
+  }
+
+  function remove(onePk, otherPk) {
+    const { left } = link;
+    return left.table.update(otherPk, { [left.field]: null });
+  }
+
   return {
     join,
+    create,
+    remove,
     link,
     sync,
     targetTable: left.table,
@@ -39,7 +57,11 @@ export function belongsTo(link) {
     const { before = query => query } = options;
     return query.merge(function(row) {
       let joinQuery = before(right.table.query());
-      joinQuery = joinQuery.getAll(row(left.field), { index: right.field });
+      joinQuery = r.branch(
+        row(left.field),
+        joinQuery.getAll(row(left.field), { index: right.field }),
+        r.expr([]),
+      );
       joinQuery = r.branch(joinQuery.count().gt(0), joinQuery.nth(0), null);
       return { [as]: joinQuery };
     });
@@ -49,8 +71,22 @@ export function belongsTo(link) {
     await link.sync(connection);
   }
 
+  function create(onePk, otherPk) {
+    const { left, right } = link;
+    return right.table.get(otherPk).do(function(rightRow) {
+      return left.table.update(onePk, { [left.field]: rightRow(right.field) });
+    });
+  }
+
+  function remove(onePk, /* otherPk */) {
+    const { left } = link;
+    return left.table.update(onePk, { [left.field]: null });
+  }
+
   return {
     join,
+    create,
+    remove,
     link,
     sync,
     targetTable: right.table,
@@ -66,7 +102,11 @@ export function hasMany(link) {
     const { before = query => query } = options;
     return query.merge(function(row) {
       let joinQuery = before(left.table.query());
-      joinQuery = joinQuery.getAll(row(right.field), { index: left.field });
+      joinQuery = r.branch(
+        row(right.field),
+        joinQuery.getAll(row(right.field), { index: left.field }),
+        r.expr([]),
+      );
       joinQuery = joinQuery.coerceTo('array');
       return { [as]: joinQuery };
     });
@@ -74,14 +114,14 @@ export function hasMany(link) {
 
   function create(onePk, otherPk) {
     const { left, right } = link;
-    return r.table(right.table.table).get(onePk).do(function(rightRow) {
-      return r.table(left.table.table).get(otherPk).update({ [left.field]: rightRow(right.field) });
+    return right.table.get(onePk).do(function(rightRow) {
+      return left.table.update(otherPk, { [left.field]: rightRow(right.field) });
     });
   }
 
-  function remove(onePk, leftPk) {
+  function remove(onePk, otherPk) {
     const { left } = link;
-    return r.table(left.table.table).get(leftPk).update({ [left.field]: null });
+    return left.table.update(otherPk, { [left.field]: null });
   }
 
   async function sync(connection) {
@@ -110,9 +150,17 @@ export function belongsToMany(link) {
     const { before = query => query } = options;
     return query.merge(function(row) {
       let joinQuery = before(link1.left.table.query());
-      joinQuery = joinQuery.getAll(row(link1.right.field), { index: link1.left.field }).coerceTo('array');
+      joinQuery = r.branch(
+        row(link1.right.field),
+        joinQuery.getAll(row(link1.right.field), { index: link1.left.field }).coerceTo('array'),
+        r.expr([]),
+      );
       joinQuery = joinQuery.concatMap(function(row) {
-        return link2.right.table.query().getAll(row(link2.left.field), { index: link2.right.field }).coerceTo('array');
+        return r.branch(
+          row(link2.left.field),
+          link2.right.table.query().getAll(row(link2.left.field), { index: link2.right.field }).coerceTo('array'),
+          r.expr([]),
+        );
       });
       return { [as]: joinQuery };
     });
@@ -120,18 +168,18 @@ export function belongsToMany(link) {
 
   function create(onePk, otherPk) {
     const [link1, link2] = link;
-    const Relation = link1.left.table;
-    const relation = Relation.create({
+    const relationTable = link1.left.table;
+    const relation = relationTable.create({
       [link1.left.field]: onePk,
       [link2.left.field]: otherPk,
     });
-    return r.table(Relation.table).insert(relation, { conflict: 'replace' });
+    return relationTable.insert(relation, { conflict: 'replace' });
   }
 
   function remove(onePk, otherPk) {
     const [link1, link2] = link;
-    const Relation = link1.left.table;
-    return r.table(Relation.table)
+    const relationTable = link1.left.table;
+    return relationTable.query()
       .getAll(onePk, { index: link1.left.field })
       .filter({ [link2.left.field]: otherPk })
       // .getAll(otherPk, { index: link2.left.field })
