@@ -7,10 +7,12 @@ import Link from './Link';
 
 
 export default class Table {
+  static pk = 'id';
+
   constructor(options = {}) {
     const { table, pk, schema, relations } = Joi.attempt(options, {
       table: Joi.string().required(),
-      pk: Joi.string().default('id'),
+      pk: Joi.string().default(this.constructor.pk),
       schema: Joi.func().required(),
       relations: Joi.func().default(() => () => ({}), 'relation'),
     });
@@ -111,7 +113,11 @@ export default class Table {
   }
 
   update(pk, data) {
-    return this.query().get(pk).update(data);
+    const updateData = { ...data };
+    if (this.hasField('updatedAt')) {
+      updateData.updatedAt = new Date();
+    }
+    return this.query().get(pk).update(updateData);
   }
 
   delete(pk) {

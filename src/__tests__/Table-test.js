@@ -309,9 +309,11 @@ describe('Table', () => {
       });
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
+      const beforeUpdatedAt = foo.updatedAt;
       await fooTable.update(foo.id, { name: 'bar' }).run(connection);
       const fetchedfoo = await fooTable.get(foo.id).run(connection);
       expect(fetchedfoo).to.have.property('name', 'bar');
+      expect(fetchedfoo.updatedAt.getTime()).to.not.equal(beforeUpdatedAt.getTime());
     });
   });
 
