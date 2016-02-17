@@ -1,4 +1,4 @@
-[![npm version](https://badge.fury.io/js/nothinkdb.svg)](https://badge.fury.io/js/nothinkdb)
+[![npm version](https://badge.fury.io/js/nothinkdb.svg)](https://badge.fury.io/js/nothinkdb) [![Build Status](https://travis-ci.org/ironhee/nothinkdb.svg?branch=master)](https://travis-ci.org/ironhee/nothinkdb) 
 
 # Nothinkdb
 
