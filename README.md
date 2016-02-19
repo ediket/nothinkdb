@@ -1,4 +1,4 @@
-[![npm version](https://badge.fury.io/js/nothinkdb.svg)](https://badge.fury.io/js/nothinkdb) [![Build Status](https://travis-ci.org/ironhee/nothinkdb.svg?branch=master)](https://travis-ci.org/ironhee/nothinkdb) 
+[![npm version](https://badge.fury.io/js/nothinkdb.svg)](https://badge.fury.io/js/nothinkdb) [![Build Status](https://travis-ci.org/ironhee/nothinkdb.svg?branch=master)](https://travis-ci.org/ironhee/nothinkdb)
 
 # Nothinkdb
 
@@ -19,9 +19,8 @@ npm install -S nothinkdb
 ## Example
 
 ```js
-import r from 'rethinkdb';
 import Joi from 'joi';
-import { Table, schema } from 'nothinkdb';
+import { r, Table, schema } from 'nothinkdb';
 
 const userTable = new Table({
   table: 'user',
