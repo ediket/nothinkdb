@@ -282,6 +282,8 @@ describe('Table', () => {
           ...schema,
         }),
       });
+      await fooTable.sync(connection);
+
       const config = await fooTable.query().config().run(connection);
       expect(config).to.have.property('name', 'foo');
     });
