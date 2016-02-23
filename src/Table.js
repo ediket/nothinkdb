@@ -159,9 +159,13 @@ export default class Table {
     }, query);
   }
 
-  getRelated(pk, relationName) {
-    return this.withJoin(this.get(pk), { [relationName]: true })
-      .do(r.row(relationName));
+  getRelated(pk, relationName, options = {}) {
+    return this.withJoin(this.get(pk),
+      Object.assign({
+        [relationName]: true,
+      }, options)
+    )
+    .do(r.row(relationName));
   }
 
   createRelation(relationName, onePk, otherPk) {
