@@ -1,6 +1,6 @@
 {
   "name": "nothinkdb",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Functional toolkit for rethinkdb",
   "main": "lib/nothinkdb.js",
   "files": [
@@ -37,6 +37,7 @@
     "rimraf": "^2.5.1"
   },
   "dependencies": {
+    "debug": "^2.2.0",
     "joi": "^7.2.3",
     "lodash": "^4.5.1",
     "node-uuid": "^1.4.7",

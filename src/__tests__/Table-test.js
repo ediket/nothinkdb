@@ -296,6 +296,8 @@ describe('Table', () => {
           name: Joi.string().required(),
         }),
       });
+      await fooTable.sync(connection);
+
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
       const fetchedfoo = await fooTable.query().get(foo.id).run(connection);
@@ -312,6 +314,8 @@ describe('Table', () => {
           name: Joi.string().required(),
         }),
       });
+      await fooTable.sync(connection);
+
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
       const fetchedfoo = await fooTable.get(foo.id).run(connection);
@@ -328,6 +332,8 @@ describe('Table', () => {
           name: Joi.string().required(),
         }),
       });
+      await fooTable.sync(connection);
+
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
       const beforeUpdatedAt = foo.updatedAt;
@@ -347,6 +353,8 @@ describe('Table', () => {
           name: Joi.string().required(),
         }),
       });
+      await fooTable.sync(connection);
+
       const foo = fooTable.attempt({ name: 'foo' });
       await fooTable.insert(foo).run(connection);
       await fooTable.delete(foo.id).run(connection);

@@ -4,6 +4,7 @@ import Joi from 'joi';
 import _ from 'lodash';
 import assert from 'assert';
 import Link from './Link';
+const debug = require('debug')('nothinkdb:Table')
 
 
 export default class Table {
@@ -74,6 +75,7 @@ export default class Table {
   async sync(connection) {
     await this.ensureTable(connection);
     await this.ensureAllIndexes(connection);
+    debug(`[sync] sync ${this.table}`);
   }
 
   async ensureTable(connection) {
@@ -82,11 +84,12 @@ export default class Table {
       r.tableCreate(this.table),
       null
     ).run(connection);
+    debug(`[sync] ensureTable ${this.table}`);
   }
 
   async ensureAllIndexes(connection) {
     await _.chain(this.schema())
-      .omit(schema => !_.find(schema._meta, meta => meta.index))
+      .omitBy(schema => !_.find(schema._meta, meta => meta.index))
       .reduce((promise, schema, key) => {
         return promise.then(() => this.ensureIndex(connection, key));
       }, Promise.resolve())
@@ -101,6 +104,7 @@ export default class Table {
       null
     ).run(connection);
     await this.query().indexWait(field).run(connection);
+    debug(`[sync] ensureIndex ${this.table}.${field}`);
   }
 
   query() {
