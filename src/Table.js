@@ -4,7 +4,7 @@ import Joi from 'joi';
 import _ from 'lodash';
 import assert from 'assert';
 import Link from './Link';
-const debug = require('debug')('nothinkdb:Table')
+const debug = require('debug')('nothinkdb:Table');
 
 
 export default class Table {
