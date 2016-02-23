@@ -3,7 +3,9 @@
   "version": "0.3.2",
   "description": "Functional toolkit for rethinkdb",
   "main": "lib/nothinkdb.js",
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "test": "mocha --require ./resources/mocha-require.js --timeout 20000 ./src/**/__tests__/*-test.js",
     "build": "babel --ignore *-test.js -d lib src",
@@ -37,7 +39,7 @@
   },
   "dependencies": {
     "joi": "^7.2.3",
-    "lodash": "^4.0.0",
+    "lodash": "^4.5.1",
     "node-uuid": "^1.4.7",
     "rethinkdb": "^2.2.1"
   }
