@@ -54,9 +54,9 @@ export default class Table {
     const field = this.getField(fieldName);
 
     if (isManyToMany) {
-      return field.required();
+      return field.required().meta({ index: true });
     }
-    return field.allow(null).default(null);
+    return field.allow(null).default(null).meta({ index: true });
   }
 
   linkTo(targetTable, leftField, options = {}) {
@@ -73,7 +73,7 @@ export default class Table {
 
   async sync(connection) {
     await this.ensureTable(connection);
-    await this.syncRelations(connection);
+    await this.ensureAllIndexes(connection);
   }
 
   async ensureTable(connection) {
@@ -84,6 +84,15 @@ export default class Table {
     ).run(connection);
   }
 
+  async ensureAllIndexes(connection) {
+    await _.chain(this.schema())
+      .omit(schema => !_.find(schema._meta, meta => meta.index))
+      .reduce((promise, schema, key) => {
+        return promise.then(() => this.ensureIndex(connection, key));
+      }, Promise.resolve())
+      .value();
+  }
+
   async ensureIndex(connection, field) {
     if (this.pk === field) return;
     await r.branch(
@@ -92,12 +101,6 @@ export default class Table {
       null
     ).run(connection);
     await this.query().indexWait(field).run(connection);
-  }
-
-  async syncRelations(connection) {
-    await _.reduce(this.relations(), (promise, relation) => {
-      return promise.then(() => relation.sync(connection));
-    }, Promise.resolve());
   }
 
   query() {

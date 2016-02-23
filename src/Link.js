@@ -13,16 +13,6 @@ export default class Link {
     assert.ok(this.validateLinkData(linkData), 'invalid link data');
   }
 
-  async sync(connection) {
-    await this.syncTable(connection, this.right);
-    await this.syncTable(connection, this.left);
-  }
-
-  async syncTable(connection, { table, field }) {
-    await table.ensureTable(connection);
-    await table.ensureIndex(connection, field);
-  }
-
   constructor(options = {}) {
     const { left, right } = options;
     Link.assertLinkData(left);

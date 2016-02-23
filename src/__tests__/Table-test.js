@@ -16,12 +16,6 @@ describe('Table', () => {
     r.dbCreate('test');
   });
 
-  beforeEach(async () => {
-    await r.branch(r.tableList().contains('foo').not(), r.tableCreate('foo'), null).run(connection);
-    await r.branch(r.tableList().contains('bar').not(), r.tableCreate('bar'), null).run(connection);
-    await r.branch(r.tableList().contains('foobar').not(), r.tableCreate('foobar'), null).run(connection);
-  });
-
   after(async () => {
     await connection.close();
   });
@@ -250,6 +244,28 @@ describe('Table', () => {
       expect(foo2bar.right).to.deep.equal({
         table: fooTable, field: 'id',
       });
+    });
+  });
+
+  describe('sync', () => {
+    it('should ensure table & ensure index', async () => {
+      await r.branch(r.tableList().contains('syncTable'), r.tableDrop('syncTable'), null).run(connection);
+
+      const syncTable = new Table({
+        table: 'syncTable',
+        schema: () => ({
+          ...schema,
+          syncField: Joi.string().meta({ index: true }),
+        }),
+      });
+      await syncTable.sync(connection);
+
+      expect(
+        await r.tableList().contains('syncTable').run(connection)
+      ).to.be.true;
+      expect(
+        await r.table('syncTable').indexList().contains('syncField').run(connection)
+      ).to.be.true;
     });
   });
 

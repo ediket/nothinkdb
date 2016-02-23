@@ -22,10 +22,6 @@ export function hasOne(link) {
     });
   }
 
-  async function sync(connection) {
-    await link.sync(connection);
-  }
-
   function create(onePk, otherPk) {
     const { left, right } = link;
     return right.table.get(onePk).do(function(rightRow) {
@@ -43,7 +39,6 @@ export function hasOne(link) {
     create,
     remove,
     link,
-    sync,
     targetTable: left.table,
     type: 'hasOne',
   };
@@ -67,10 +62,6 @@ export function belongsTo(link) {
     });
   }
 
-  async function sync(connection) {
-    await link.sync(connection);
-  }
-
   function create(onePk, otherPk) {
     const { left, right } = link;
     return right.table.get(otherPk).do(function(rightRow) {
@@ -88,7 +79,6 @@ export function belongsTo(link) {
     create,
     remove,
     link,
-    sync,
     targetTable: right.table,
     type: 'belongsTo',
   };
@@ -124,16 +114,11 @@ export function hasMany(link) {
     return left.table.update(otherPk, { [left.field]: null });
   }
 
-  async function sync(connection) {
-    await link.sync(connection);
-  }
-
   return {
     join,
     create,
     remove,
     link,
-    sync,
     targetTable: left.table,
     type: 'hasMany',
   };
@@ -186,17 +171,11 @@ export function belongsToMany(link) {
       .delete();
   }
 
-  async function sync(connection) {
-    await link1.sync(connection);
-    await link2.sync(connection);
-  }
-
   return {
     join,
     create,
     remove,
     link,
-    sync,
     targetTable: link2.right.table,
     type: 'belongsToMany',
   };
