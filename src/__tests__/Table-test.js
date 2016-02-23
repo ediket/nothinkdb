@@ -250,22 +250,27 @@ describe('Table', () => {
   describe('sync', () => {
     it('should ensure table & ensure index', async () => {
       await r.branch(r.tableList().contains('syncTable'), r.tableDrop('syncTable'), null).run(connection);
-
-      const syncTable = new Table({
-        table: 'syncTable',
+      const oneTable = new Table({
+        table: 'oneTable',
         schema: () => ({
           ...schema,
           syncField: Joi.string().meta({ index: true }),
         }),
       });
-      await syncTable.sync(connection);
+      const otherTable = new Table({
+        table: 'otherTable',
+        schema: () => ({
+          ...schema,
+          syncId: oneTable.getForeignKey(),
+        }),
+      });
+      await oneTable.sync(connection);
+      await otherTable.sync(connection);
 
-      expect(
-        await r.tableList().contains('syncTable').run(connection)
-      ).to.be.true;
-      expect(
-        await r.table('syncTable').indexList().contains('syncField').run(connection)
-      ).to.be.true;
+      expect(await r.tableList().contains('oneTable').run(connection)).to.be.true;
+      expect(await r.tableList().contains('otherTable').run(connection)).to.be.true;
+      expect(await r.table('oneTable').indexList().contains('syncField').run(connection)).to.be.true;
+      expect(await r.table('otherTable').indexList().contains('syncId').run(connection)).to.be.true;
     });
   });
 
