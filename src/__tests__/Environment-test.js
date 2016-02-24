@@ -5,7 +5,7 @@ import schema from '../schema';
 import Environment from '../Environment';
 
 
-describe.only('Environment', () => {
+describe('Environment', () => {
   let connection;
 
   class CustomTable extends Table {
