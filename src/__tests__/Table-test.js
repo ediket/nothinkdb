@@ -23,7 +23,7 @@ describe('Table', () => {
   describe('constructor', () => {
     it('schema could be extended', () => {
       const baseTable = new Table({
-        table: 'base',
+        tableName: 'base',
         schema: () => ({
           ...schema,
           name: Joi.string().default('hello'),
@@ -38,7 +38,7 @@ describe('Table', () => {
 
   describe('validate', () => {
     const fooTable = new Table({
-      table: 'foo',
+      tableName: 'foo',
       schema: () => ({
         name: Joi.string().required(),
       }),
@@ -55,7 +55,7 @@ describe('Table', () => {
 
   describe('create', () => {
     const fooTable = new Table({
-      table: 'foo',
+      tableName: 'foo',
       schema: () => ({
         foo: Joi.string().default('foo'),
         bar: Joi.string().required(),
@@ -76,7 +76,7 @@ describe('Table', () => {
   describe('hasField', () => {
     it('should return true when specified fieldName is given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           name: Joi.string(),
         }),
@@ -86,7 +86,7 @@ describe('Table', () => {
 
     it('should return false when unspecified fieldName is given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({}),
       });
       expect(fooTable.hasField('name')).to.be.false;
@@ -96,7 +96,7 @@ describe('Table', () => {
   describe('assertField', () => {
     it('should not throw error when specified fieldName is given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           name: Joi.string(),
         }),
@@ -106,7 +106,7 @@ describe('Table', () => {
 
     it('should throw error when unspecified fieldName is given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({}),
       });
       expect(() => fooTable.assertField('name')).to.throw(Error);
@@ -116,7 +116,7 @@ describe('Table', () => {
   describe('getField', () => {
     it('should return field schema when specified fieldName is given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           name: Joi.string(),
         }),
@@ -129,7 +129,7 @@ describe('Table', () => {
 
     it('should throw error when unspecified fieldName is given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({}),
       });
       expect(() => fooTable.getField('name')).to.throw(Error);
@@ -139,7 +139,7 @@ describe('Table', () => {
   describe('getForeignKey', () => {
     it('should return primary key schema when any argument is not given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         pk: 'name',
         schema: () => ({
           name: Joi.string().default(() => uuid.v4(), 'pk'),
@@ -153,7 +153,7 @@ describe('Table', () => {
 
     it('should return field schema when options.fieldName is given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           name: Joi.string().default(() => uuid.v4(), 'pk'),
         }),
@@ -166,7 +166,7 @@ describe('Table', () => {
 
     it('should return and default(null) schema when options.isManyToMany is not given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -179,7 +179,7 @@ describe('Table', () => {
 
     it('should return required() field schema when options.isManyToMany is given', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -194,14 +194,14 @@ describe('Table', () => {
   describe('linkTo', () => {
     it('should return link', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
           barId: barTable.getForeignKey(),
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
         }),
@@ -222,13 +222,13 @@ describe('Table', () => {
   describe('linkedBy', () => {
     it('should return reverse link', () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey(),
@@ -251,14 +251,14 @@ describe('Table', () => {
     it('should ensure table & ensure index', async () => {
       await r.branch(r.tableList().contains('syncTable'), r.tableDrop('syncTable'), null).run(connection);
       const oneTable = new Table({
-        table: 'oneTable',
+        tableName: 'oneTable',
         schema: () => ({
           ...schema,
           syncField: Joi.string().meta({ index: true }),
         }),
       });
       const otherTable = new Table({
-        table: 'otherTable',
+        tableName: 'otherTable',
         schema: () => ({
           ...schema,
           syncId: oneTable.getForeignKey(),
@@ -277,7 +277,7 @@ describe('Table', () => {
   describe('query', () => {
     it('should return table query', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -292,7 +292,7 @@ describe('Table', () => {
   describe('insert', () => {
     it('should insert data into database', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
           name: Joi.string().required(),
@@ -310,7 +310,7 @@ describe('Table', () => {
   describe('get', () => {
     it('should get data from database', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
           name: Joi.string().required(),
@@ -328,7 +328,7 @@ describe('Table', () => {
   describe('update', () => {
     it('should update data into database', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
           name: Joi.string().required(),
@@ -349,7 +349,7 @@ describe('Table', () => {
   describe('delete', () => {
     it('should delete data from database', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
           name: Joi.string().required(),
@@ -368,7 +368,7 @@ describe('Table', () => {
   describe('withJoin & getRelated', () => {
     it('should query hasOne relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -377,7 +377,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey(),
@@ -403,7 +403,7 @@ describe('Table', () => {
 
     it('should query belongsTo relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
           barId: barTable.getForeignKey(),
@@ -413,7 +413,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
         }),
@@ -438,7 +438,7 @@ describe('Table', () => {
 
     it('should query hasMany relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -447,7 +447,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey(),
@@ -475,7 +475,7 @@ describe('Table', () => {
 
     it('should query belongsToMany relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -484,7 +484,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
         }),
@@ -493,7 +493,7 @@ describe('Table', () => {
         }),
       });
       const foobarTable = new Table({
-        table: 'foobar',
+        tableName: 'foobar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey({ isManyToMany: true }),
@@ -537,7 +537,7 @@ describe('Table', () => {
   describe('createRelation', () => {
     it('should add hasOne relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -546,7 +546,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey(),
@@ -571,7 +571,7 @@ describe('Table', () => {
 
     it('should add belongsTo relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
           barId: barTable.getForeignKey(),
@@ -581,7 +581,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
         }),
@@ -605,7 +605,7 @@ describe('Table', () => {
 
     it('should add hasMany relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -614,7 +614,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey(),
@@ -638,7 +638,7 @@ describe('Table', () => {
 
     it('should add belongsToMany relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -647,7 +647,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
         }),
@@ -656,7 +656,7 @@ describe('Table', () => {
         }),
       });
       const foobarTable = new Table({
-        table: 'foobar',
+        tableName: 'foobar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey({ isManyToMany: true }),
@@ -686,7 +686,7 @@ describe('Table', () => {
   describe('removeRelation', () => {
     it('should remove hasOne relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -695,7 +695,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey(),
@@ -721,7 +721,7 @@ describe('Table', () => {
 
     it('should remove belongsTo relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
           barId: barTable.getForeignKey(),
@@ -731,7 +731,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
         }),
@@ -756,7 +756,7 @@ describe('Table', () => {
 
     it('should remove hasMany relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -765,7 +765,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey(),
@@ -794,7 +794,7 @@ describe('Table', () => {
 
     it('should remove belongsToMany relation', async () => {
       const fooTable = new Table({
-        table: 'foo',
+        tableName: 'foo',
         schema: () => ({
           ...schema,
         }),
@@ -803,7 +803,7 @@ describe('Table', () => {
         }),
       });
       const barTable = new Table({
-        table: 'bar',
+        tableName: 'bar',
         schema: () => ({
           ...schema,
         }),
@@ -812,7 +812,7 @@ describe('Table', () => {
         }),
       });
       const foobarTable = new Table({
-        table: 'foobar',
+        tableName: 'foobar',
         schema: () => ({
           ...schema,
           fooId: fooTable.getForeignKey({ isManyToMany: true }),

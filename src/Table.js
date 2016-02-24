@@ -11,15 +11,15 @@ export default class Table {
   static pk = 'id';
 
   constructor(options = {}) {
-    const { table, pk, schema, relations } = Joi.attempt(options, {
-      table: Joi.string().required(),
+    const { tableName, pk, schema, relations } = Joi.attempt(options, {
+      tableName: Joi.string().required(),
       pk: Joi.string().default(this.constructor.pk),
       schema: Joi.func().required(),
       relations: Joi.func().default(() => () => ({}), 'relation'),
     });
     // assert.equal(_.has(schema(), pk), true, `'${pk}' is not specified in schema`);
 
-    this.table = table;
+    this.tableName = tableName;
     this.pk = pk;
     this.schema = schema;
     this.relations = relations;
@@ -42,7 +42,7 @@ export default class Table {
   }
 
   assertField(fieldName) {
-    return assert.ok(this.hasField(fieldName), `Field '${fieldName}' is unspecified in table '${this.table}'.`);
+    return assert.ok(this.hasField(fieldName), `Field '${fieldName}' is unspecified in table '${this.tableName}'.`);
   }
 
   getField(fieldName) {
@@ -75,16 +75,16 @@ export default class Table {
   async sync(connection) {
     await this.ensureTable(connection);
     await this.ensureAllIndexes(connection);
-    debug(`[sync] sync ${this.table}`);
+    debug(`[sync] sync ${this.tableName}`);
   }
 
   async ensureTable(connection) {
     await r.branch(
-      r.tableList().contains(this.table).not(),
-      r.tableCreate(this.table),
+      r.tableList().contains(this.tableName).not(),
+      r.tableCreate(this.tableName),
       null
     ).run(connection);
-    debug(`[sync] ensureTable ${this.table}`);
+    debug(`[sync] ensureTable ${this.tableName}`);
   }
 
   async ensureAllIndexes(connection) {
@@ -104,11 +104,11 @@ export default class Table {
       null
     ).run(connection);
     await this.query().indexWait(field).run(connection);
-    debug(`[sync] ensureIndex ${this.table}.${field}`);
+    debug(`[sync] ensureIndex ${this.tableName}.${field}`);
   }
 
   query() {
-    return r.table(this.table);
+    return r.table(this.tableName);
   }
 
   insert(data, ...options) {
@@ -133,7 +133,7 @@ export default class Table {
 
   getRelation(relation) {
     const relationObj = this.relations()[relation];
-    assert.ok(relationObj, `Relation '${this.table}.${relation}' is not exist.`);
+    assert.ok(relationObj, `Relation '${this.tableName}.${relation}' is not exist.`);
     return relationObj;
   }
 

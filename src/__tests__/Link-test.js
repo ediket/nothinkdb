@@ -7,7 +7,7 @@ import Table from '../Table';
 describe('Link', () => {
   describe('constructor', () => {
     const fooTable = new Table({
-      table: 'foo',
+      tableName: 'foo',
       schema: () => ({
         foo: Joi.string(),
         bar: Joi.string(),
