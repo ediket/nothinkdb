@@ -166,12 +166,10 @@ export default class Table {
     }, query);
   }
 
-  getRelated(pk, relationName, options = {}) {
-    return this.withJoin(this.get(pk),
-      Object.assign({
-        [relationName]: true,
-      }, options)
-    )
+  getRelated(pk, relationName, options = true) {
+    return this.withJoin(this.get(pk), {
+      [relationName]: options,
+    })
     .do(r.row(relationName));
   }
 

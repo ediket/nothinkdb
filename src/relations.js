@@ -9,14 +9,17 @@ export function hasOne(link) {
   const { left, right } = link;
 
   function join(as, query, options = {}) {
-    const { before = query => query } = options;
+    const {
+      apply = query => query,
+    } = options;
     return query.merge(function(row) {
-      let joinQuery = before(left.table.query());
+      let joinQuery = left.table.query();
       joinQuery = r.branch(
         row(right.field),
         joinQuery.getAll(row(right.field), { index: left.field }),
         r.expr([]),
       );
+      joinQuery = apply(joinQuery);
       joinQuery = r.branch(joinQuery.count().gt(0), joinQuery.nth(0), null);
       return { [as]: joinQuery };
     });
@@ -49,14 +52,17 @@ export function belongsTo(link) {
   const { left, right } = link;
 
   function join(as, query, options = {}) {
-    const { before = query => query } = options;
+    const {
+      apply = query => query,
+    } = options;
     return query.merge(function(row) {
-      let joinQuery = before(right.table.query());
+      let joinQuery = right.table.query();
       joinQuery = r.branch(
         row(left.field),
         joinQuery.getAll(row(left.field), { index: right.field }),
         r.expr([]),
       );
+      joinQuery = apply(joinQuery);
       joinQuery = r.branch(joinQuery.count().gt(0), joinQuery.nth(0), null);
       return { [as]: joinQuery };
     });
@@ -89,14 +95,17 @@ export function hasMany(link) {
   const { left, right } = link;
 
   function join(as, query, options = {}) {
-    const { before = query => query } = options;
+    const {
+      apply = query => query,
+    } = options;
     return query.merge(function(row) {
-      let joinQuery = before(left.table.query());
+      let joinQuery = left.table.query();
       joinQuery = r.branch(
         row(right.field),
         joinQuery.getAll(row(right.field), { index: left.field }),
         r.expr([]),
       );
+      joinQuery = apply(joinQuery);
       joinQuery = joinQuery.coerceTo('array');
       return { [as]: joinQuery };
     });
@@ -132,21 +141,25 @@ export function belongsToMany(link) {
   const [link1, link2] = link;
 
   function join(as, query, options = {}) {
-    const { before = query => query } = options;
+    const {
+      apply = query => query,
+    } = options;
     return query.merge(function(row) {
-      let joinQuery = before(link1.left.table.query());
+      let joinQuery = link1.left.table.query();
       joinQuery = r.branch(
         row(link1.right.field),
-        joinQuery.getAll(row(link1.right.field), { index: link1.left.field }).coerceTo('array'),
+        joinQuery.getAll(row(link1.right.field), { index: link1.left.field }),
         r.expr([]),
       );
+      joinQuery = apply(joinQuery);
       joinQuery = joinQuery.concatMap(function(row) {
         return r.branch(
           row(link2.left.field),
-          link2.right.table.query().getAll(row(link2.left.field), { index: link2.right.field }).coerceTo('array'),
+          link2.right.table.query().getAll(row(link2.left.field), { index: link2.right.field }),
           r.expr([]),
         );
       });
+      joinQuery = joinQuery.coerceTo('array');
       return { [as]: joinQuery };
     });
   }
