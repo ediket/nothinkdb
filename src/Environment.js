@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import assert from 'assert';
 import _Table from './Table';
+const debug = require('debug')('nothinkdb:Environment');
 
 
 export default class Environment {
@@ -12,7 +12,11 @@ export default class Environment {
 
   createTable(options) {
     const { tableName } = options;
-    assert.equal(this.hasTable(tableName), false, `tableName: '${tableName}' is already defined`);
+
+    if (this.hasTable(tableName)) {
+      debug(`[createTable] tableName: '${tableName}' is already defined`);
+      return this.getTable(tableName);
+    }
 
     const table = new this.Table(options);
     this.tables[tableName] = table;

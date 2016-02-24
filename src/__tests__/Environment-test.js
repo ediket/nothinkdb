@@ -67,20 +67,20 @@ describe('Environment', () => {
       expect(fooTable.constructor).to.equal(CustomTable);
     });
 
-    it('should throw error if tableName already exist', () => {
+    it('should return same Table if same tableName exist.', () => {
       const env = new Environment({});
 
-      env.createTable({
+      const fooTable = env.createTable({
         tableName: 'foo',
         schema: () => ({}),
       });
 
-      expect(() =>
+      expect(
         env.createTable({
           tableName: 'foo',
           schema: () => ({}),
         })
-      ).to.throw(Error);
+      ).to.equal(fooTable);
     });
   });
 
