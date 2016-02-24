@@ -1,39 +1,46 @@
 # API Reference
 
-- [Table](#table)
-  - [`constructor(options)`](#constructoroptions)
-  - [`validate(data)`](#validatedata)
-  - [`create(data)` - aliases: `attempt`](#createdata---aliases-attempt)
-  - [`hasField(fieldName)`](#hasfieldfieldname)
-  - [`assertField(fieldName)`](#assertfieldfieldname)
-  - [`getField(fieldName)`](#getfieldfieldname)
-  - [`getForeignKey([options])`](#getforeignkeyoptions)
-  - [`linkTo(targetTable, leftField, [options])`](#linktotargettable-leftfield-options)
-  - [`linkedBy(targetTable, leftField, [options])`](#linkedbytargettable-leftfield-options)
-  - [`sync(connection)`](#syncconnection)
-  - [`query()`](#query)
-  - [`insert(data)`](#insertdata)
-  - [`get(pk)`](#getpk)
-  - [`update(pk, data)`](#updatepk-data)
-  - [`delete(pk)`](#deletepk)
-  - [`getRelation(relationName)`](#getrelationrelationname)
-  - [`createRelation(relationName, onePk, otherPk)`](#createrelationrelationname-onepk-otherpk)
-  - [`removeRelation(relationName, onePk, otherPk)`](#removerelationrelationname-onepk-otherpk)
-  - [`withJoin(query, relations)`](#withjoinquery-relations)
-  - [`getRelated(pk, relationName)`](#getrelatedpk-relationname)
+- [Table](#Table)
+  - [`constructor(options)`](#Table-constructor)
+  - [`validate(data)`](#Table-validate)
+  - [`create(data)` - aliases: `attempt`](#Table-create)
+  - [`hasField(fieldName)`](#Table-hasField)
+  - [`assertField(fieldName)`](#Table-assertField)
+  - [`getField(fieldName)`](#Table-getField)
+  - [`getForeignKey([options])`](#Table-getForeignKey)
+  - [`linkTo(targetTable, leftField, [options])`](#Table-linkTo)
+  - [`linkedBy(targetTable, leftField, [options])`](#Table-linkedBy)
+  - [`sync(connection)`](#Table-sync)
+  - [`query()`](#Table-query)
+  - [`insert(data)`](#Table-insert)
+  - [`get(pk)`](#Table-get)
+  - [`update(pk, data)`](#Table-update)
+  - [`delete(pk)`](#Table-delete)
+  - [`getRelation(relationName)`](#Table-getRelation)
+  - [`createRelation(relationName, onePk, otherPk)`](#Table-createRelation)
+  - [`removeRelation(relationName, onePk, otherPk)`](#Table-removeRelation)
+  - [`withJoin(query, relations)`](#Table-withJoin)
+  - [`getRelated(pk, relationName)`](#Table-getRelated)
 - [schema](#schema)
 - [relations](#relations)
-  - [`hasOne(link)`](#hasonelink)
-  - [`belongsTo(link)`](#belongstolink)
-  - [`hasMany(link)`](#hasmanylink)
-  - [`belongsToMany(links)`](#belongstomanylink)
+  - [`hasOne(link)`](#relations-hasOne)
+  - [`belongsTo(link)`](#relations-belongsTo)
+  - [`hasMany(link)`](#relations-hasMany)
+  - [`belongsToMany(links)`](#relations-belongsToMany)
+- [Environment](#Environment)
+  - [`constructor(options)`](#Environment-constructor)
+  - [`createTable(options)`](#Environment-createTable)
+  - [`getTable(tableName)`](#Environment-getTable)
+  - [`hasTable(tableName)`](#Environment-hasTable)
+  - [`getAllTables()`](#Environment-getAllTables)
+  - [`sync(connection)`](#Environment-sync)
 
-## Table
+## Table <a name="Table"></a>
 
-### `constructor(options)`
+### `constructor(options)` <a name="Table-constructor"></a>
 
 - `options`
-  - `table` - `string` - the rethinkdb table name.
+  - `tableName` - `string` - the rethinkdb table name.
   - `schema` - `function` - the table schema. It should returns [joi](https://github.com/hapijs/joi) schema.
   - [`pk`] - `string` - the custom primary key field. Defaults to `'id'`.
   - [`relations`] - `function` - the table relations.
@@ -43,21 +50,21 @@ import { Table } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     name: Joi.string().default('hello'),
   }),
 })
 ```
 
-### `validate(data)`
+### `validate(data)` <a name="Table-validate"></a>
 
 ```js
 import { Table } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     name: Joi.string().required(),
   }),
@@ -66,14 +73,14 @@ const fooTable = new Table({
 const result = fooTable.validate({ name: 'foo' });  // returns true
 ```
 
-### `create(data)` - aliases: `attempt`
+### `create(data)` - aliases: `attempt` <a name="Table-create"></a>
 
 ```js
 import { Table } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     foo: Joi.string().default('foo'),
     bar: Joi.string().required(),
@@ -84,14 +91,14 @@ fooTable.create({ bar: 'bar' });  // returns { foo: 'foo', bar: 'bar' }
 fooTable.create({})).to.throw(Error);  // throws error
 ```
 
-### `hasField(fieldName)`
+### `hasField(fieldName)` <a name="Table-hasField"></a>
 
 ```js
 import { Table } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     name: Joi.string(),
   }),
@@ -100,14 +107,14 @@ const fooTable = new Table({
 fooTable.hasField('name');  // returns true
 ```
 
-### `assertField(fieldName)`
+### `assertField(fieldName)` <a name="Table-assertField"></a>
 
 ```js
 import { Table } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     foo: Joi.string(),
   }),
@@ -117,14 +124,14 @@ fooTable.assertField('foo');
 fooTable.assertField('bar');  // throws error
 ```
 
-### `getField(fieldName)`
+### `getField(fieldName)` <a name="Table-getField"></a>
 
 ```js
 import { Table } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     foo: Joi.string(),
   }),
@@ -133,30 +140,30 @@ const fooTable = new Table({
 fooTable.getField('foo');  // returns Joi.string()
 ```
 
-### `getForeignKey([options])`
+### `getForeignKey([options])` <a name="Table-getForeignKey"></a>
 
 - `options`
   - `fieldName` - `string` - Defaults to `this.pk`.
   - `isManyToMany` - `function` - Defaults to `false`.
 
-### `linkTo(targetTable, leftField, [options])`
+### `linkTo(targetTable, leftField, [options])` <a name="Table-linkTo"></a>
 
 - `options`
   - `index` - `string` - Defaults to `targetTable.pk`.
 
-### `linkedBy(targetTable, leftField, [options])`
+### `linkedBy(targetTable, leftField, [options])` <a name="Table-linkedBy"></a>
 
 - `options`
   - `index` - `string` - Defaults to `this.pk`.
 
-### `sync(connection)`
+### `sync(connection)` <a name="Table-sync"></a>
 
 ```js
 import { Table, schema, belongsTo } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     ...schema,
     barId: barTable.getForeignKey(),
@@ -166,7 +173,7 @@ const fooTable = new Table({
   }),
 });
 const barTable = new Table({
-  table: 'bar',
+  tableName: 'bar',
   schema: () => ({
     ...schema,
   }),
@@ -178,14 +185,14 @@ await barTable.sync(connection);
 // ensure table 'bar'
 ```
 
-### `query()`
+### `query()` <a name="Table-query"></a>
 
 ```js
 import { Table, schema } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     ...schema,
   }),
@@ -197,17 +204,17 @@ const config = await fooTable.query().config().run(connection);
 const foo1 = await fooTable.query().get('some foo1 id').run(connection);
 ```
 
-### `insert(data)`
-### `get(pk)`
-### `update(pk, data)`
-### `delete(pk)`
+### `insert(data)` <a name="Table-insert"></a>
+### `get(pk)` <a name="Table-get"></a>
+### `update(pk, data)` <a name="Table-update"></a>
+### `delete(pk)` <a name="Table-delete"></a>
 
 ```js
 import { Table } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     id: Joi.string().required(),
     name: Joi.string().required(),
@@ -227,21 +234,21 @@ await fooTable.delete(foo.id).run(connection);
 await fooTable.get(foo.id).run(connection);  // returns null
 ```
 
-### `getRelation(relationName)`
+### `getRelation(relationName)` <a name="Table-getRelation"></a>
 
-### `createRelation(relationName, onePk, otherPk)`
+### `createRelation(relationName, onePk, otherPk)` <a name="Table-createRelation"></a>
 
-### `removeRelation(relationName, onePk, otherPk)`
+### `removeRelation(relationName, onePk, otherPk)` <a name="Table-removeRelation"></a>
 
-### `withJoin(query, relations)`
-### `getRelated(pk, relationName)`
+### `withJoin(query, relations)` <a name="Table-withJoin"></a>
+### `getRelated(pk, relationName)` <a name="Table-getRelated"></a>
 
 ```js
 import { Table, hasOne } from 'nothinkdb';
 import Joi from 'joi';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     id: Joi.string().required(),
     name: Joi.string().required(),
@@ -251,7 +258,7 @@ const fooTable = new Table({
   }),
 });
 const barTable = new Table({
-  table: 'bar',
+  tableName: 'bar',
   schema: () => ({
     id: Joi.string().required(),
     name: Joi.string().required(),
@@ -310,7 +317,7 @@ await fooTable.getRelated(foo.id, 'bar').run(connection);
 */
 ```
 
-## schema
+## schema <a name="schema"></a>
 
 The default table schema contains `id`, `createdAt`, `updatedAt`.
 
@@ -318,7 +325,7 @@ The default table schema contains `id`, `createdAt`, `updatedAt`.
 import { Table, schema } from 'nothinkdb';
 
 const table = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     id: schema.id,
     createdAt: schema.createdAt,
@@ -329,7 +336,7 @@ const table = new Table({
 
 // Same
 const table = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     ...schema,
     name: Joi.string().default('hello'),
@@ -337,20 +344,20 @@ const table = new Table({
 });
 ```
 
-## relations
+## relations <a name="relations"></a>
 
 - one-to-one: hasOne
 - one-to-many: hasMany
 - many-to-one: belongsTo
 - many-to-many: belongsToMany
 
-### `hasOne(link)`
+### `hasOne(link)` <a name="relations-hasOne"></a>
 
 ```js
 import { Table, schema, hasOne } from 'nothinkdb';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     ...schema,
   }),
@@ -359,7 +366,7 @@ const fooTable = new Table({
   }),
 });
 const barTable = new Table({
-  table: 'bar',
+  tableName: 'bar',
   schema: () => ({
     ...schema,
     fooId: fooTable.getForeignKey(),
@@ -367,13 +374,13 @@ const barTable = new Table({
 });
 ```
 
-### `hasMany(link)`
+### `hasMany(link)` <a name="relations-hasMany"></a>
 
 ```js
 import { Table, schema, hasOne } from 'nothinkdb';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     ...schema,
   }),
@@ -382,7 +389,7 @@ const fooTable = new Table({
   }),
 });
 const barTable = new Table({
-  table: 'bar',
+  tableName: 'bar',
   schema: () => ({
     ...schema,
     fooId: fooTable.getForeignKey(),
@@ -390,13 +397,13 @@ const barTable = new Table({
 });
 ```
 
-### `belongsTo(link)`
+### `belongsTo(link)` <a name="relations-belongsTo"></a>
 
 ```js
 import { Table, schema, hasOne } from 'nothinkdb';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     ...schema,
     barId: barTable.getForeignKey(),
@@ -406,20 +413,20 @@ const fooTable = new Table({
   }),
 });
 const barTable = new Table({
-  table: 'bar',
+  tableName: 'bar',
   schema: () => ({
     ...schema,
   }),
 });
 ```
 
-### `belongsToMany(link)`
+### `belongsToMany(link)` <a name="relations-belongsToMany"></a>
 
 ```js
 import { Table, schema, hasOne } from 'nothinkdb';
 
 const fooTable = new Table({
-  table: 'foo',
+  tableName: 'foo',
   schema: () => ({
     ...schema,
   }),
@@ -431,7 +438,7 @@ const fooTable = new Table({
   }),
 });
 const barTable = new Table({
-  table: 'bar',
+  tableName: 'bar',
   schema: () => ({
     ...schema,
   }),
@@ -443,11 +450,64 @@ const barTable = new Table({
   }),
 });
 const foobarTable = new Table({
-  table: 'foobar',
+  tableName: 'foobar',
   schema: () => ({
     ...schema,
     fooId: fooTable.getForeignKey({ isManyToMany: true }),
     barId: barTable.getForeignKey({ isManyToMany: true }),
   }),
+});
+```
+
+## Environment <a name="Environment"></a>
+
+### `constructor(options)` <a name="Environment-constructor"></a>
+
+- `options`
+  - `Table` - `Table` - the nothinkdb `Table` class.
+
+### `createTable(options)` <a name="Environment-createTable"></a>
+
+- `options` - `object` - same as [Table constructor](#Table-constructor) options.
+
+### `getTable(tableName)` <a name="Environment-getTable"></a>
+### `hasTable(tableName)` <a name="Environment-hasTable"></a>
+### `getAllTables()` <a name="Environment-getAllTables"></a>
+### `sync(connection)` <a name="Environment-sync"></a>
+
+```js
+import { r, Environment, Table } from 'nothinkdb';
+
+class BaseTable extends Table {
+  constructor(options) {
+    super({
+      ...options,
+      schema: () => ({
+        ...schema,
+        ...options.schema(),
+      }),
+    });
+  }
+}
+
+const env = new Environment({
+  Table: BaseTable,
+});
+
+const fooTable = env.createTable({
+  tableName: 'foo',
+  schema: () => ({}),
+});
+
+fooTable.constructor === BaseTable;  // true
+
+fooTable === env.getTable('foo');  // true
+
+env.hasTable('foo');  // true
+
+env.getAllTables();  // [fooTable]
+
+r.connect().then(async connection => {
+  await env.sync(connection);  // sync all tables in environment
 });
 ```
