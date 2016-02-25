@@ -137,26 +137,24 @@ export default class Table {
     return relationObj;
   }
 
-  _withJoinOne(query, key, options) {
-    const relation = this.getRelation(key);
-    return relation.join(key, query, options);
+  _withJoinOne(query, relationName, options) {
+    const relation = this.getRelation(relationName);
+    return query.merge(function(row) {
+      return {
+        [relationName]: relation.coerceType(
+          relation.query(row, options)
+        ),
+      };
+    });
   }
 
   withJoin(query, relations) {
-    return _.reduce(relations, (query, value, key) => {
-      let options = {};
-      if (_.isObject(value)) {
-        options = _.chain(value)
-          .omitBy((value, key) => !_.startsWith(key, '_'))
-          .reduce((memo, value, key) => {
-            return { [key.slice(1)]: value };
-          }, {})
-          .value();
-      }
+    return _.reduce(relations, (query, relations, key) => {
+      const options = _.isObject(relations) ? relations : {};
 
       query = this._withJoinOne(query, key, options);
-      if (_.isObject(value)) {
-        const relations = _.omitBy(value, (value, key) => _.startsWith(key, '_'));
+      if (_.isObject(relations)) {
+        const relations = _.omitBy(relations, (relations, key) => _.startsWith(key, '_'));
         const { targetTable } = this.getRelation(key);
         query = query.merge(function(row) {
           return { [key]: targetTable.withJoin(row(key), relations) };
@@ -167,10 +165,17 @@ export default class Table {
   }
 
   getRelated(pk, relationName, options = true) {
-    return this.withJoin(this.get(pk), {
+    const relation = this.getRelation(relationName);
+    return relation.coerceType(
+      this.queryRelated(pk, relationName, options)
+    );
+  }
+
+  queryRelated(pk, relationName, options = true) {
+    const relation = this.getRelation(relationName);
+    return relation.query(this.get(pk), {
       [relationName]: options,
-    })
-    .do(r.row(relationName));
+    });
   }
 
   createRelation(relationName, onePk, otherPk) {
