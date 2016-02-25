@@ -164,18 +164,16 @@ export default class Table {
     }, query);
   }
 
-  getRelated(pk, relationName, options = true) {
+  getRelated(pk, relationName, options) {
     const relation = this.getRelation(relationName);
     return relation.coerceType(
       this.queryRelated(pk, relationName, options)
     );
   }
 
-  queryRelated(pk, relationName, options = true) {
+  queryRelated(pk, relationName, options = {}) {
     const relation = this.getRelation(relationName);
-    return relation.query(this.get(pk), {
-      [relationName]: options,
-    });
+    return relation.query(this.get(pk), options);
   }
 
   createRelation(relationName, onePk, otherPk) {

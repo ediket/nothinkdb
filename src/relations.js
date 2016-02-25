@@ -169,12 +169,16 @@ export function belongsToMany(link) {
       targetIdsQuery.getAll(row(link1.right.field), { index: link1.left.field }),
       r.expr([]),
     );
-    targetIdsQuery = apply(targetIdsQuery);
     targetIdsQuery = targetIdsQuery.hasFields(link2.left.field);
+    targetIdsQuery = apply(targetIdsQuery);
     targetIdsQuery = targetIdsQuery.map(function(row) { return row(link2.left.field); });
     targetIdsQuery = targetIdsQuery.coerceTo('array');
 
-    const query = link2.right.table.query().getAll(r.args(targetIdsQuery), { index: link2.right.field });
+    const query = r.branch(
+      targetIdsQuery.count().gt(0),
+      link2.right.table.query().getAll(r.args(targetIdsQuery), { index: link2.right.field }),
+      r.expr([]),
+    );
     return query;
   }
 
