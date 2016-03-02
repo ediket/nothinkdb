@@ -1,6 +1,6 @@
 {
   "name": "nothinkdb",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "Functional toolkit for rethinkdb",
   "main": "lib/nothinkdb.js",
   "files": [
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/ironhee/nothinkdb.git"
+    "url": "git+ssh://git@github.com/ediket/nothinkdb.git"
   },
   "keywords": [
     "rethinkdb",
@@ -24,9 +24,9 @@
   "author": "ironhee <leechulhee95@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ironhee/nothinkdb/issues"
+    "url": "https://github.com/ediket/nothinkdb/issues"
   },
-  "homepage": "https://github.com/ironhee/nothinkdb#readme",
+  "homepage": "https://github.com/ediket/nothinkdb#readme",
   "devDependencies": {
     "babel": "^5.8.35",
     "babel-eslint": "^4.1.7",
