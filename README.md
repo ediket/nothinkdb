@@ -1,4 +1,4 @@
-[![npm version](https://badge.fury.io/js/nothinkdb.svg)](https://badge.fury.io/js/nothinkdb) [![Build Status](https://travis-ci.org/ironhee/nothinkdb.svg?branch=master)](https://travis-ci.org/ironhee/nothinkdb)
+[![npm version](https://badge.fury.io/js/nothinkdb.svg)](https://badge.fury.io/js/nothinkdb) [![Build Status](https://travis-ci.org/ediket/nothinkdb.svg?branch=master)](https://travis-ci.org/ediket/nothinkdb)
 
 # Nothinkdb
 
@@ -60,9 +60,9 @@ async function run() {
 run();
 ```
 
-If you want to see more examples, See the [Examples](https://github.com/ironhee/nothinkdb/tree/master/examples)
+If you want to see more examples, See the [Examples](https://github.com/ediket/nothinkdb/tree/master/examples)
 
 
 ## API
 
-See the [API Reference](https://github.com/ironhee/nothinkdb/blob/master/API.md).
+See the [API Reference](https://github.com/ediket/nothinkdb/blob/master/API.md).
