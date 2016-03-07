@@ -365,7 +365,7 @@ describe('Table', () => {
     });
   });
 
-  describe('withJoin & getRelated', () => {
+  describe('single direction withJoin & getRelated', () => {
     it('should query hasOne relation', async () => {
       const fooTable = new Table({
         tableName: 'foo',
@@ -531,6 +531,108 @@ describe('Table', () => {
       const fetchedFoos = await barTable.getRelated(bar.id, 'foos').run(connection);
       expect(fetchedFoos).to.have.length(1);
       expect(foo).to.deep.equal(fetchedFoos[0]);
+    });
+  });
+
+  describe('bi-direction withJoin & getRelated', () => {
+    it('should query hasOne/belongsTo relation', async () => {
+      const fooTable = new Table({
+        tableName: 'foo',
+        schema: () => ({
+          ...schema,
+          barId: barTable.getForeignKey(),
+        }),
+        relations: () => ({
+          bar: belongsTo(fooTable.linkTo(barTable, 'barId')),
+        }),
+      });
+      const barTable = new Table({
+        tableName: 'bar',
+        schema: () => ({
+          ...schema,
+        }),
+        relations: () => ({
+          foo: hasOne(barTable.linkedBy(fooTable, 'barId')),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+
+      const bar = barTable.create({});
+      const foo = fooTable.create({ barId: bar.id });
+
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+
+      let query;
+      let fetchedFoo;
+      let fetchedBar;
+
+      query = fooTable.get(foo.id);
+      query = fooTable.withJoin(query, { bar: true });
+      fetchedFoo = await query.run(connection);
+      expect(bar).to.deep.equal(fetchedFoo.bar);
+
+      query = barTable.get(bar.id);
+      query = barTable.withJoin(query, { foo: true });
+      fetchedBar = await query.run(connection);
+      expect(foo).to.deep.equal(fetchedBar.foo);
+
+      fetchedBar = await fooTable.getRelated(foo.id, 'bar').run(connection);
+      expect(bar).to.deep.equal(fetchedBar);
+
+      fetchedFoo = await barTable.getRelated(bar.id, 'foo').run(connection);
+      expect(foo).to.deep.equal(fetchedFoo);
+    });
+
+    it('should query hasMany/belongsTo relation', async () => {
+      const fooTable = new Table({
+        tableName: 'foo',
+        schema: () => ({
+          ...schema,
+        }),
+        relations: () => ({
+          bars: hasMany(fooTable.linkedBy(barTable, 'fooId')),
+        }),
+      });
+      const barTable = new Table({
+        tableName: 'bar',
+        schema: () => ({
+          ...schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+        relations: () => ({
+          foo: belongsTo(barTable.linkTo(fooTable, 'fooId')),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+
+      const foo = fooTable.create({});
+      const bar = barTable.create({ fooId: foo.id });
+
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+
+      let query;
+      let fetchedFoo;
+      query = fooTable.get(foo.id);
+      query = fooTable.withJoin(query, { bars: true });
+      fetchedFoo = await query.run(connection);
+      expect(fetchedFoo.bars).to.have.length(1);
+      expect(bar).to.deep.equal(fetchedFoo.bars[0]);
+
+      query = barTable.get(bar.id);
+      query = barTable.withJoin(query, { foo: true });
+      const fetchedBar = await query.run(connection);
+      expect(fetchedBar.foo).to.deep.equal(foo);
+
+      const fetchedBars = await fooTable.getRelated(foo.id, 'bars').run(connection);
+      expect(fetchedBars).to.have.length(1);
+      expect(bar).to.deep.equal(fetchedBars[0]);
+
+      fetchedFoo = await barTable.getRelated(bar.id, 'foo').run(connection);
+      expect(foo).to.deep.equal(fetchedFoo);
     });
   });
 
