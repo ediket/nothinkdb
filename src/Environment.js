@@ -37,16 +37,17 @@ export default class Environment {
   }
 
   async sync(connection) {
-    await _.reduce(this.tables, async (promise, table) => {
-      await promise;
-      if (_.isFunction(connection)) {
-        await connection().then(async connection => {
+    await Promise.all(
+      _.map(this.tables, async table => {
+        if (_.isFunction(connection)) {
+          await connection().then(async connection => {
+            await table.sync(connection);
+            await connection.close();
+          });
+        } else {
           await table.sync(connection);
-          await connection.close();
-        });
-      } else {
-        await table.sync(connection);
-      }
-    }, Promise.resolve());
+        }
+      })
+    );
   }
 }
