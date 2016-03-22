@@ -162,11 +162,13 @@ export default class Table {
     }, query);
   }
 
-  getRelated(pk, relationName, options) {
+  getRelated(pk, relationName, options = {}) {
     const relation = this.getRelation(relationName);
-    return relation.coerceType(
-      this.queryRelated(pk, relationName, options)
-    );
+    const query = this.queryRelated(pk, relationName, options);
+
+    if (options.noCoerce) { return query; }
+
+    return relation.coerceType(query);
   }
 
   queryRelated(pk, relationName, options = {}) {
