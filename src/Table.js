@@ -25,6 +25,13 @@ export default class Table {
     this.relations = relations;
   }
 
+  metaFields(metaKey) {
+    return _.chain(this.schema())
+      .omitBy(schema => !_.find(schema._meta, meta => _.has(meta, metaKey)))
+      .keys()
+      .value();
+  }
+
   validate(data = null) {
     return !Joi.validate(data, this.schema()).error;
   }
@@ -87,12 +94,15 @@ export default class Table {
   }
 
   async ensureAllIndexes(connection) {
-    await _.chain(this.schema())
-      .omitBy(schema => !_.find(schema._meta, meta => meta.index))
-      .reduce((promise, schema, key) => {
-        return promise.then(() => this.ensureIndex(connection, key));
-      }, Promise.resolve())
-      .value();
+    const indexFields = [
+      ...this.metaFields('index'),
+      ...this.metaFields('unique'),
+    ];
+    if (_.isEmpty(indexFields)) return;
+
+    await indexFields.reduce((promise, key) => {
+      return promise.then(() => this.ensureIndex(connection, key));
+    }, Promise.resolve());
   }
 
   async ensureIndex(connection, field) {
@@ -110,7 +120,8 @@ export default class Table {
   }
 
   insert(data, ...options) {
-    return this.query().insert(data, ...options);
+    return this.assertIntegrate(data)
+    .do(() => this.query().insert(data, ...options));
   }
 
   get(pk) {
@@ -122,7 +133,28 @@ export default class Table {
     if (this.hasField('updatedAt')) {
       updateData.updatedAt = r.now();
     }
-    return this.query().get(pk).update(updateData, ...options);
+    return this.assertIntegrate(data)
+    .do(() => this.query().get(pk).update(updateData, ...options));
+  }
+
+  assertIntegrate(data) {
+    const uniqueFields = this.metaFields('unique');
+    if (_.isEmpty(uniqueFields)) return r.expr(true);
+
+    const uniqueData = _.pick(data, uniqueFields);
+    if (_.isEmpty(uniqueData)) return r.expr(true);
+
+    return _.reduce(uniqueData, (expr, val, key) => {
+      return expr.do(() => {
+        if (_.isUndefined(val) || _.isNull(val)) return r.expr(null);
+
+        return r.branch(
+          this.query().getAll(val, {index: key}).count().gt(0),
+          r.error(`"${key}" field is unique in "${this.tableName}" table. { "${key}": "${val}" } already exist.`),
+          null
+        );
+      });
+    }, r.expr({}));
   }
 
   delete(pk, ...options) {

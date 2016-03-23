@@ -346,6 +346,40 @@ describe('Table', () => {
     });
   });
 
+  describe('insert& update', () => {
+    let fooTable;
+    const EXIST_NAME = 'foo';
+    const NEW_NAME = 'new';
+
+    before(async () => {
+      fooTable = new Table({
+        tableName: 'foo',
+        schema: () => ({
+          ...schema,
+          name: Joi.string().required().meta({ unique: true }),
+        }),
+      });
+      await fooTable.sync(connection);
+      await fooTable.query().delete().run(connection);
+
+      const foo = fooTable.create({ name: EXIST_NAME });
+      await fooTable.insert(foo).run(connection);
+    });
+
+    it('should throw error if data already exist', async () => {
+      const foo1 = fooTable.create({ name: EXIST_NAME });
+      await fooTable.insert(foo1).run(connection)
+        .then(() => { throw new Error(); })
+        .catch(() => {});
+
+      const foo2 = fooTable.create({ name: NEW_NAME });
+      await fooTable.insert(foo2).run(connection);
+      await fooTable.update(foo2.id, { name: EXIST_NAME }).run(connection)
+        .then(() => { throw new Error(); })
+        .catch(() => {});
+    });
+  });
+
   describe('delete', () => {
     it('should delete data from database', async () => {
       const fooTable = new Table({
