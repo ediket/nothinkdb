@@ -8,6 +8,7 @@ Functional toolkit for [rethinkdb](https://www.rethinkdb.com/api/javascript/).
 - handle default fields like `id`, `createdAt`, `updatedAt`.
 - fully customizable 1-n, 1-1, n-1, n-m relations. (create, remove, join).
 - ensure table, secondary index.
+- ensure unique field.
 - many useful query generator.
 
 ## Install

@@ -52,7 +52,9 @@ import Joi from 'joi';
 const fooTable = new Table({
   tableName: 'foo',
   schema: () => ({
-    name: Joi.string().default('hello'),
+    id: Joi.string().max(36).default(() => uuid.v4(), 'primary key').meta({ index: true }),
+    name: Joi.string().required().meta({ unique: true }),
+    foo: Joi.string().default('bar'),
   }),
 })
 ```
@@ -166,6 +168,7 @@ const fooTable = new Table({
   tableName: 'foo',
   schema: () => ({
     ...schema,
+    name: Joi.string().required().meta({ unique: true }),
     barId: barTable.getForeignKey(),
   }),
   relations: () => ({
@@ -180,7 +183,7 @@ const barTable = new Table({
 });
 
 await fooTable.sync(connection);
-// ensure table 'foo', ensure secondary index 'foo.barId'
+// ensure table 'foo', ensure secondary index 'foo.barId', 'foo.createdAt', 'foo.updatedAt', 'foo.name'
 await barTable.sync(connection);
 // ensure table 'bar'
 ```
