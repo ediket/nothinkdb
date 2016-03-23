@@ -168,7 +168,8 @@ const fooTable = new Table({
   tableName: 'foo',
   schema: () => ({
     ...schema,
-    name: Joi.string().required().meta({ unique: true }),
+    uniqueField: Joi.string().required().meta({ unique: true }),
+    indexedField: Joi.string().required().meta({ index: true }),
     barId: barTable.getForeignKey(),
   }),
   relations: () => ({
@@ -183,7 +184,7 @@ const barTable = new Table({
 });
 
 await fooTable.sync(connection);
-// ensure table 'foo', ensure secondary index 'foo.barId', 'foo.createdAt', 'foo.updatedAt', 'foo.name'
+// ensure table 'foo', ensure secondary index 'foo.barId', 'foo.createdAt', 'foo.updatedAt', 'foo.uniqueField', 'foo.indexedField'
 await barTable.sync(connection);
 // ensure table 'bar'
 ```
