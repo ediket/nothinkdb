@@ -198,8 +198,6 @@ export default class Table {
     const relation = this.getRelation(relationName);
     const query = this.queryRelated(pk, relationName, options);
 
-    if (options.noCoerce) { return query; }
-
     return relation.coerceType(query);
   }
 
