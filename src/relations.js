@@ -189,21 +189,35 @@ export function belongsToMany(link) {
   function create(onePk, otherPk) {
     const [link1, link2] = link;
     const relationTable = link1.left.table;
-    const relation = relationTable.create({
-      [link1.left.field]: onePk,
-      [link2.left.field]: otherPk,
-    });
+
+    let relation;
+    if (_.isArray(otherPk)) {
+      relation = otherPk.map(otherPk =>
+        relationTable.create({
+          [link1.left.field]: onePk,
+          [link2.left.field]: otherPk,
+        })
+      );
+    } else {
+      relation = relationTable.create({
+        [link1.left.field]: onePk,
+        [link2.left.field]: otherPk,
+      });
+    }
     return relationTable.insert(relation, { conflict: 'replace' });
   }
 
   function remove(onePk, otherPk) {
     const [link1, link2] = link;
     const relationTable = link1.left.table;
-    return relationTable.query()
-      .getAll(onePk, { index: link1.left.field })
-      .filter({ [link2.left.field]: otherPk })
-      // .getAll(otherPk, { index: link2.left.field })
-      .delete();
+    let query = relationTable.query()
+      .getAll(onePk, { index: link1.left.field });
+    if (_.isArray(otherPk)) {
+      query = query.filter(row => r.expr(otherPk).contains(row(link2.left.field)));
+    } else {
+      query = query.filter({ [link2.left.field]: otherPk });
+    }
+    return query.delete();
   }
 
   return {

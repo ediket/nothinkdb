@@ -120,6 +120,10 @@ export default class Table {
   }
 
   insert(data, ...options) {
+    const insertData = { ...data };
+    if (this.hasField('createdAt')) {
+      insertData.createdAt = r.now();
+    }
     return this.assertIntegrate(data)
     .do(() => this.query().insert(data, ...options));
   }
@@ -134,7 +138,12 @@ export default class Table {
       updateData.updatedAt = r.now();
     }
     return this.assertIntegrate(data)
-    .do(() => this.query().get(pk).update(updateData, ...options));
+    .do(() => {
+      const selectionQuery = _.isArray(pk) ?
+        this.query().getAll(...pk) :
+        this.query().get(pk);
+      return selectionQuery.update(updateData, ...options);
+    });
   }
 
   assertIntegrate(data) {
