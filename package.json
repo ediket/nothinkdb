@@ -37,7 +37,7 @@
     "eslint": "^1.10.3",
     "eslint-config-airbnb": "^0.1.0",
     "mocha": "^2.4.5",
-    "rethinkdb": "^2.2.2",
+    "rethinkdb": "2.2.3",
     "rimraf": "^2.5.1"
   },
   "dependencies": {
