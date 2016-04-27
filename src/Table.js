@@ -186,7 +186,11 @@ export default class Table {
 
         if (_.isObject(relations)) {
           const { targetTable } = this.getRelation(key);
-          relatedQuery = targetTable.withJoin(relatedQuery, relations);
+          relatedQuery = r.branch(
+            relatedQuery,
+            targetTable.withJoin(relatedQuery, relations),
+            relatedQuery,
+          );
         }
 
         return { [key]: relatedQuery };

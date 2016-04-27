@@ -413,7 +413,7 @@ describe('Table', () => {
     });
   });
 
-  describe('withJoin & getRelated', () => {
+  describe.only('withJoin & getRelated', () => {
     it('should query hasOne relation', async () => {
       const fooTable = new Table({
         tableName: 'foo',
@@ -629,6 +629,50 @@ describe('Table', () => {
           ...bar,
           baz,
         },
+      });
+    });
+
+    it('should query nested relation with empty part', async () => {
+      const fooTable = new Table({
+        tableName: 'foo',
+        schema: () => ({
+          ...schema,
+        }),
+        relations: () => ({
+          bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
+        }),
+      });
+      const barTable = new Table({
+        tableName: 'bar',
+        schema: () => ({
+          ...schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+        relations: () => ({
+          baz: hasOne(barTable.linkedBy(bazTable, 'barId')),
+        }),
+      });
+      const bazTable = new Table({
+        tableName: 'baz',
+        schema: () => ({
+          ...schema,
+          barId: barTable.getForeignKey(),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+      await bazTable.sync(connection);
+
+      const foo = fooTable.create({});
+
+      await fooTable.insert(foo).run(connection);
+
+      let query = fooTable.get(foo.id);
+      query = await fooTable.withJoin(query, { bar: { baz: true } });
+      const result = await query.run(connection);
+      expect(result).to.deep.equal({
+        ...foo,
+        bar: null,
       });
     });
   });
