@@ -176,29 +176,22 @@ export default class Table {
     return relationObj;
   }
 
-  _withJoinOne(query, relationName, options) {
-    const relation = this.getRelation(relationName);
-    return query.merge(function(row) {
-      return {
-        [relationName]: relation.coerceType(
-          relation.query(row, options)
-        ),
-      };
-    });
-  }
-
   withJoin(query, relations) {
     return _.reduce(relations, (query, relations, key) => {
-      const options = _.isObject(relations) ? relations : {};
+      if (_.startsWith(key, '_')) return query;
 
-      query = this._withJoinOne(query, key, options);
-      if (_.isObject(relations)) {
-        const relations = _.omitBy(relations, (relations, key) => _.startsWith(key, '_'));
-        const { targetTable } = this.getRelation(key);
-        query = query.merge(function(row) {
-          return { [key]: targetTable.withJoin(row(key), relations) };
-        });
-      }
+      const relation = this.getRelation(key);
+      query = query.merge(row => {
+        let relatedQuery = relation.coerceType(relation.query(row, relations));
+
+        if (_.isObject(relations)) {
+          const { targetTable } = this.getRelation(key);
+          relatedQuery = targetTable.withJoin(relatedQuery, relations);
+        }
+
+        return { [key]: relatedQuery };
+      });
+
       return query;
     }, query);
   }

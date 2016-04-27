@@ -580,6 +580,57 @@ describe('Table', () => {
       expect(fetchedFoos).to.have.length(1);
       expect(foo).to.deep.equal(fetchedFoos[0]);
     });
+
+    it('should query nested relation', async () => {
+      const fooTable = new Table({
+        tableName: 'foo',
+        schema: () => ({
+          ...schema,
+        }),
+        relations: () => ({
+          bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
+        }),
+      });
+      const barTable = new Table({
+        tableName: 'bar',
+        schema: () => ({
+          ...schema,
+          fooId: fooTable.getForeignKey(),
+        }),
+        relations: () => ({
+          baz: hasOne(barTable.linkedBy(bazTable, 'barId')),
+        }),
+      });
+      const bazTable = new Table({
+        tableName: 'baz',
+        schema: () => ({
+          ...schema,
+          barId: barTable.getForeignKey(),
+        }),
+      });
+      await fooTable.sync(connection);
+      await barTable.sync(connection);
+      await bazTable.sync(connection);
+
+      const foo = fooTable.create({});
+      const bar = barTable.create({ fooId: foo.id });
+      const baz = bazTable.create({ barId: bar.id });
+
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+      await bazTable.insert(baz).run(connection);
+
+      let query = fooTable.get(foo.id);
+      query = await fooTable.withJoin(query, { bar: { baz: true } });
+      const result = await query.run(connection);
+      expect(result).to.deep.equal({
+        ...foo,
+        bar: {
+          ...bar,
+          baz,
+        },
+      });
+    });
   });
 
   describe('createRelation', () => {
