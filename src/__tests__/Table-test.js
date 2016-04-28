@@ -743,6 +743,7 @@ describe('Table', () => {
     let fooTable;
     let barTable;
     let foobarTable;
+    let followingTable;
 
     before(async () => {
       fooTable = new Table({
@@ -755,6 +756,14 @@ describe('Table', () => {
             fooTable.linkedBy(foobarTable, 'fooId'),
             foobarTable.linkTo(barTable, 'barId'),
           ], { index: 'foobar' }),
+          following: belongsToMany([
+            fooTable.linkedBy(followingTable, 'followerId'),
+            followingTable.linkTo(fooTable, 'followeeId'),
+          ], { index: 'following' }),
+          followers: belongsToMany([
+            fooTable.linkedBy(followingTable, 'followeeId'),
+            followingTable.linkTo(fooTable, 'followerId'),
+          ], { index: 'followers' }),
         }),
       });
       barTable = new Table({
@@ -780,9 +789,29 @@ describe('Table', () => {
           foobar: [r.row('fooId'), r.row('barId')],
         },
       });
+      followingTable = new Table({
+        tableName: 'following',
+        schema: () => ({
+          ...schema,
+          followerId: fooTable.getForeignKey({ isManyToMany: true }),
+          followeeId: fooTable.getForeignKey({ isManyToMany: true }),
+        }),
+        index: {
+          following: [r.row('followerId'), r.row('followeeId')],
+          followers: [r.row('followeeId'), r.row('followerId')],
+        },
+      });
       await fooTable.sync(connection);
       await barTable.sync(connection);
       await foobarTable.sync(connection);
+      await followingTable.sync(connection);
+    });
+
+    beforeEach(async () => {
+      await fooTable.query().delete().run(connection);
+      await barTable.query().delete().run(connection);
+      await foobarTable.query().delete().run(connection);
+      await followingTable.query().delete().run(connection);
     });
 
     describe('withJoin & getRelated', () => {
@@ -913,9 +942,6 @@ describe('Table', () => {
         expect(
           await fooTable.hasRelation('bars', foo.id, bar.id).run(connection)
         ).to.be.true;
-        expect(
-          await fooTable.hasRelation('bars', bar.id, foo.id).run(connection)
-        ).to.be.false;
       });
 
       it('should check relations with array', async () => {
@@ -933,8 +959,31 @@ describe('Table', () => {
         expect(
           await fooTable.hasRelation('bars', foo.id, [bar.id]).run(connection)
         ).to.be.true;
+      });
+
+      it('should check relations with same table', async () => {
+        const follower = fooTable.create({});
+        const followee = fooTable.create({});
+        await fooTable.insert([follower, followee]).run(connection);
+
         expect(
-          await fooTable.hasRelation('bars', bar.id, [foo.id]).run(connection)
+          await fooTable.hasRelation('following', follower.id, followee.id).run(connection)
+        ).to.be.false;
+
+        await fooTable.createRelation('following', follower.id, followee.id).run(connection);
+
+        expect(
+          await fooTable.hasRelation('following', follower.id, followee.id).run(connection)
+        ).to.be.true;
+        expect(
+          await fooTable.hasRelation('followers', follower.id, follower.id).run(connection)
+        ).to.be.false;
+
+        expect(
+          await fooTable.hasRelation('followers', followee.id, follower.id).run(connection)
+        ).to.be.true;
+        expect(
+          await fooTable.hasRelation('following', followee.id, follower.id).run(connection)
         ).to.be.false;
       });
     });
