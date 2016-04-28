@@ -229,4 +229,9 @@ export default class Table {
     const relation = this.getRelation(relationName);
     return relation.remove(onePk, otherPk);
   }
+
+  hasRelation(relationName, onePk, otherPk) {
+    const relation = this.getRelation(relationName);
+    return relation.has(onePk, otherPk);
+  }
 }

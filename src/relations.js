@@ -48,11 +48,22 @@ export function hasOne(link) {
     return left.table.update(otherPk, { [left.field]: null });
   }
 
+  function has(onePk, otherPk) {
+    return right.table.get(onePk).do(rightRow => {
+      return left.table.get(otherPk).do(leftRow => {
+        return leftRow.hasFields(left.field).and(
+          leftRow(left.field).eq(rightRow(right.field))
+        );
+      });
+    });
+  }
+
   return {
     query,
     coerceType,
     create,
     remove,
+    has,
     link,
     targetTable: left.table,
     type: 'hasOne',
@@ -94,11 +105,22 @@ export function belongsTo(link) {
     return left.table.update(onePk, { [left.field]: null });
   }
 
+  function has(onePk, otherPk) {
+    return right.table.get(otherPk).do(rightRow => {
+      return left.table.get(onePk).do(leftRow => {
+        return leftRow.hasFields(left.field).and(
+          leftRow(left.field).eq(rightRow(right.field))
+        );
+      });
+    });
+  }
+
   return {
     query,
     coerceType,
     create,
     remove,
+    has,
     link,
     targetTable: right.table,
     type: 'belongsTo',
@@ -140,23 +162,36 @@ export function hasMany(link) {
     return left.table.update(otherPk, { [left.field]: null });
   }
 
+  function has(onePk, otherPk) {
+    return right.table.get(onePk).do(rightRow => {
+      return left.table.get(otherPk).do(leftRow => {
+        return leftRow.hasFields(left.field).and(
+          leftRow(left.field).eq(rightRow(right.field))
+        );
+      });
+    });
+  }
+
   return {
     query,
     coerceType,
     create,
     remove,
+    has,
     link,
     targetTable: left.table,
     type: 'hasMany',
   };
 }
 
-export function belongsToMany(link) {
+export function belongsToMany(link, options = {}) {
   assert.equal(link.length, 2);
-  assert.equal(link[0].constructor, Link);
-  assert.equal(link[1].constructor, Link);
-  assert.equal(link[0].left.table, link[1].left.table, 'link table must be same.');
   const [link1, link2] = link;
+  assert.equal(link1.constructor, Link);
+  assert.equal(link2.constructor, Link);
+  assert.equal(link1.left.table, link2.left.table, 'link table must be same.');
+  const { index } = options;
+  const relationTable = link[0].left.table;
 
   function query(row, options = {}) {
     const {
@@ -187,9 +222,6 @@ export function belongsToMany(link) {
   }
 
   function create(onePk, otherPk) {
-    const [link1, link2] = link;
-    const relationTable = link1.left.table;
-
     let relation;
     if (_.isArray(otherPk)) {
       relation = otherPk.map(otherPk =>
@@ -207,17 +239,34 @@ export function belongsToMany(link) {
     return relationTable.insert(relation, { conflict: 'replace' });
   }
 
-  function remove(onePk, otherPk) {
-    const [link1, link2] = link;
-    const relationTable = link1.left.table;
-    let query = relationTable.query()
-      .getAll(onePk, { index: link1.left.field });
-    if (_.isArray(otherPk)) {
-      query = query.filter(row => r.expr(otherPk).contains(row(link2.left.field)));
+  function queryRelation(onePk, otherPk) {
+    let query = relationTable.query();
+
+    if (index) {
+      if (_.isArray(otherPk)) {
+        query = query.getAll(otherPk.map(otherPk => [onePk, otherPk]), { index });
+      } else {
+        query = query.getAll([onePk, otherPk], { index });
+      }
     } else {
-      query = query.filter({ [link2.left.field]: otherPk });
+      query = query.getAll(onePk, { index: link1.left.field });
+
+      if (_.isArray(otherPk)) {
+        query = query.filter(row => r.expr(otherPk).contains(row(link2.left.field)));
+      } else {
+        query = query.filter({ [link2.left.field]: otherPk });
+      }
     }
-    return query.delete();
+
+    return query;
+  }
+
+  function remove(onePk, otherPk) {
+    return queryRelation(onePk, otherPk).delete();
+  }
+
+  function has(onePk, otherPk) {
+    return queryRelation(onePk, otherPk).count().gt(0);
   }
 
   return {
@@ -225,6 +274,7 @@ export function belongsToMany(link) {
     coerceType,
     create,
     remove,
+    has,
     link,
     targetTable: link2.right.table,
     type: 'belongsToMany',

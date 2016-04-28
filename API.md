@@ -19,6 +19,7 @@
   - [`getRelation(relationName)`](#Table-getRelation)
   - [`createRelation(relationName, onePk, otherPk)`](#Table-createRelation)
   - [`removeRelation(relationName, onePk, otherPk)`](#Table-removeRelation)
+  - [`hasRelation(relationName, onePk, otherPk)`](#Table-hasRelation)
   - [`withJoin(query, relations)`](#Table-withJoin)
   - [`getRelated(pk, relationName)`](#Table-getRelated)
 - [schema](#schema)
@@ -250,6 +251,8 @@ await fooTable.get(foo.id).run(connection);  // returns null
 
 ### `removeRelation(relationName, onePk, otherPk)` <a name="Table-removeRelation"></a>
 
+### `hasRelation(relationName, onePk, otherPk)` <a name="Table-hasRelation"></a>
+
 ### `withJoin(query, relations)` <a name="Table-withJoin"></a>
 ### `getRelated(pk, relationName)` <a name="Table-getRelated"></a>
 
@@ -284,7 +287,11 @@ const bar = barTable.create({ id: 'barId', name: 'bar' });
 await fooTable.insert(foo).run(connection);
 await barTable.insert(bar).run(connection);
 
+await fooTable.hasRelation('bar', foo.id, bar.id).run(connection);  // false
+
 await fooTable.createRelation('bar', foo.id, bar.id).run(connection);
+
+await fooTable.hasRelation('bar', foo.id, bar.id).run(connection);  // true
 
 let query = fooTable.get(foo.id);
 query = await fooTable.withJoin(query, { bar: true });
@@ -309,6 +316,8 @@ await fooTable.getRelated(foo.id, 'bar').run(connection);
 */
 
 await fooTable.removeRelation('bar', foo.id, bar.id).run(connection);
+
+await fooTable.hasRelation('bar', foo.id, bar.id).run(connection);  // false
 
 let query = fooTable.get(foo.id);
 query = await fooTable.withJoin(query, { bar: true });
@@ -433,6 +442,7 @@ const barTable = new Table({
 ### `belongsToMany(link)` <a name="relations-belongsToMany"></a>
 
 ```js
+import r from 'rethinkdb';
 import { Table, schema, hasOne } from 'nothinkdb';
 
 const fooTable = new Table({
@@ -466,6 +476,10 @@ const foobarTable = new Table({
     fooId: fooTable.getForeignKey({ isManyToMany: true }),
     barId: barTable.getForeignKey({ isManyToMany: true }),
   }),
+  index: {
+    bars: [r.row('fooId'), r.row('barId')],
+    foos: [r.row('barId'), r.row('fooId')],
+  }
 });
 ```
 

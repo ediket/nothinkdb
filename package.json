@@ -1,6 +1,6 @@
 {
   "name": "nothinkdb",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "description": "Functional toolkit for rethinkdb",
   "main": "lib/nothinkdb.js",
   "files": [
