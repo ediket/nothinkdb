@@ -244,7 +244,7 @@ export function belongsToMany(link, options = {}) {
 
     if (index) {
       if (_.isArray(otherPk)) {
-        query = query.getAll(otherPk.map(otherPk => [onePk, otherPk]), { index });
+        query = query.getAll(r.args(otherPk.map(otherPk => [onePk, otherPk])), { index });
       } else {
         query = query.getAll([onePk, otherPk], { index });
       }

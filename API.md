@@ -454,7 +454,7 @@ const fooTable = new Table({
     bars: belongsToMany([
       fooTable.linkedBy(foobarTable, 'fooId'),
       foobarTable.linkTo(barTable, 'barId')
-    ]),
+    ], { index: 'foobar' }),
   }),
 });
 const barTable = new Table({
@@ -466,7 +466,7 @@ const barTable = new Table({
     foos: belongsToMany([
       barTable.linkedBy(foobarTable, 'barId'),
       foobarTable.linkTo(fooTable, 'fooId')
-    ]),
+    ], { index: 'foobar' }),
   }),
 });
 const foobarTable = new Table({
@@ -477,9 +477,8 @@ const foobarTable = new Table({
     barId: barTable.getForeignKey({ isManyToMany: true }),
   }),
   index: {
-    bars: [r.row('fooId'), r.row('barId')],
-    foos: [r.row('barId'), r.row('fooId')],
-  }
+    foobar: [r.row('fooId'), r.row('barId')],
+  },
 });
 ```
 

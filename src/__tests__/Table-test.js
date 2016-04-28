@@ -739,7 +739,7 @@ describe('Table', () => {
     });
   });
 
-  describe('relation - belongsToMany', () => {
+  describe.only('relation - belongsToMany', () => {
     let fooTable;
     let barTable;
     let foobarTable;
@@ -751,7 +751,10 @@ describe('Table', () => {
           ...schema,
         }),
         relations: () => ({
-          bars: belongsToMany([fooTable.linkedBy(foobarTable, 'fooId'), foobarTable.linkTo(barTable, 'barId')]),
+          bars: belongsToMany([
+            fooTable.linkedBy(foobarTable, 'fooId'),
+            foobarTable.linkTo(barTable, 'barId'),
+          ], { index: 'foobar' }),
         }),
       });
       barTable = new Table({
@@ -760,7 +763,10 @@ describe('Table', () => {
           ...schema,
         }),
         relations: () => ({
-          foos: belongsToMany([barTable.linkedBy(foobarTable, 'barId'), foobarTable.linkTo(fooTable, 'fooId')]),
+          foos: belongsToMany([
+            barTable.linkedBy(foobarTable, 'barId'),
+            foobarTable.linkTo(fooTable, 'fooId'),
+          ], { index: 'foobar' }),
         }),
       });
       foobarTable = new Table({
@@ -771,8 +777,7 @@ describe('Table', () => {
           barId: barTable.getForeignKey({ isManyToMany: true }),
         }),
         index: {
-          bars: [r.row('fooId'), r.row('barId')],
-          foos: [r.row('barId'), r.row('fooId')],
+          foobar: [r.row('fooId'), r.row('barId')],
         },
       });
       await fooTable.sync(connection);
