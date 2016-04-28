@@ -739,7 +739,7 @@ describe('Table', () => {
     });
   });
 
-  describe.only('relation - belongsToMany', () => {
+  describe('relation - belongsToMany', () => {
     let fooTable;
     let barTable;
     let foobarTable;
