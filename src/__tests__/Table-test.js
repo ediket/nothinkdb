@@ -913,6 +913,9 @@ describe('Table', () => {
         expect(
           await fooTable.hasRelation('bars', foo.id, bar.id).run(connection)
         ).to.be.true;
+        expect(
+          await fooTable.hasRelation('bars', bar.id, foo.id).run(connection)
+        ).to.be.false;
       });
 
       it('should check relations with array', async () => {
@@ -930,6 +933,9 @@ describe('Table', () => {
         expect(
           await fooTable.hasRelation('bars', foo.id, [bar.id]).run(connection)
         ).to.be.true;
+        expect(
+          await fooTable.hasRelation('bars', bar.id, [foo.id]).run(connection)
+        ).to.be.false;
       });
     });
   });
