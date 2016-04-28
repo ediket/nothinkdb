@@ -249,7 +249,8 @@ describe('Table', () => {
 
   describe('sync', () => {
     it('should ensure table & ensure index', async () => {
-      await r.branch(r.tableList().contains('syncTable'), r.tableDrop('syncTable'), null).run(connection);
+      await r.branch(r.tableList().contains('oneTable'), r.tableDrop('oneTable'), null).run(connection);
+      await r.branch(r.tableList().contains('otherTable'), r.tableDrop('otherTable'), null).run(connection);
       const oneTable = new Table({
         tableName: 'oneTable',
         schema: () => ({
@@ -271,6 +272,24 @@ describe('Table', () => {
       expect(await r.tableList().contains('otherTable').run(connection)).to.be.true;
       expect(await r.table('oneTable').indexList().contains('syncField').run(connection)).to.be.true;
       expect(await r.table('otherTable').indexList().contains('syncId').run(connection)).to.be.true;
+    });
+
+    it('should ensure compound index', async () => {
+      await r.branch(r.tableList().contains('syncTable'), r.tableDrop('syncTable'), null).run(connection);
+      const syncTable = new Table({
+        tableName: 'syncTable',
+        schema: () => ({
+          foo: Joi.string(),
+          bar: Joi.string(),
+        }),
+        index: {
+          foobar: [r.row('foo'), r.row('bar')],
+        },
+      });
+      await syncTable.sync(connection);
+
+      expect(await r.tableList().contains('syncTable').run(connection)).to.be.true;
+      expect(await r.table('syncTable').indexList().contains('foobar').run(connection)).to.be.true;
     });
   });
 
@@ -413,7 +432,7 @@ describe('Table', () => {
     });
   });
 
-  describe.only('withJoin & getRelated', () => {
+  describe('withJoin & getRelated', () => {
     it('should query hasOne relation', async () => {
       const fooTable = new Table({
         tableName: 'foo',

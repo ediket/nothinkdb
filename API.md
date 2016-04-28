@@ -161,6 +161,7 @@ fooTable.getField('foo');  // returns Joi.string()
 ### `sync(connection)` <a name="Table-sync"></a>
 
 ```js
+import r from 'rethinkdb';
 import { Table, schema, belongsTo } from 'nothinkdb';
 import Joi from 'joi';
 
@@ -170,11 +171,16 @@ const fooTable = new Table({
     ...schema,
     uniqueField: Joi.string().required().meta({ unique: true }),
     indexedField: Joi.string().required().meta({ index: true }),
+    foo: Joi.string().required(),
+    bar: Joi.string().required(),
     barId: barTable.getForeignKey(),
   }),
   relations: () => ({
     bar: belongsTo(fooTable.linkTo(barTable, 'barId')),
   }),
+  index: {
+    foobar: [r.row('foo'), r.row('bar')],
+  },
 });
 const barTable = new Table({
   tableName: 'bar',
@@ -184,7 +190,7 @@ const barTable = new Table({
 });
 
 await fooTable.sync(connection);
-// ensure table 'foo', ensure secondary index 'foo.barId', 'foo.createdAt', 'foo.updatedAt', 'foo.uniqueField', 'foo.indexedField'
+// ensure table 'foo', ensure secondary index 'foo.barId', 'foo.createdAt', 'foo.updatedAt', 'foo.uniqueField', 'foo.indexedField', 'foo.foobar'
 await barTable.sync(connection);
 // ensure table 'bar'
 ```
@@ -480,7 +486,8 @@ const foobarTable = new Table({
 ### `sync(connection)` <a name="Environment-sync"></a>
 
 ```js
-import { r, Environment, Table } from 'nothinkdb';
+import r from 'rethinkdb';
+import { Environment, Table } from 'nothinkdb';
 
 class BaseTable extends Table {
   constructor(options) {

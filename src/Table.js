@@ -11,11 +11,12 @@ export default class Table {
   static pk = 'id';
 
   constructor(options = {}) {
-    const { tableName, pk, schema, relations } = Joi.attempt(options, {
+    const { tableName, pk, schema, relations, index } = Joi.attempt(options, {
       tableName: Joi.string().required(),
       pk: Joi.string().default(this.constructor.pk),
       schema: Joi.func().required(),
       relations: Joi.func().default(() => () => ({}), 'relation'),
+      index: Joi.object().default({}, 'index'),
     });
     // assert.equal(_.has(schema(), pk), true, `'${pk}' is not specified in schema`);
 
@@ -23,6 +24,7 @@ export default class Table {
     this.pk = pk;
     this.schema = schema;
     this.relations = relations;
+    this.index = index;
   }
 
   metaFields(metaKey) {
@@ -98,21 +100,27 @@ export default class Table {
       ...this.metaFields('index'),
       ...this.metaFields('unique'),
     ];
-    if (_.isEmpty(indexFields)) return;
 
-    await indexFields.reduce((promise, key) => {
-      return promise.then(() => this.ensureIndex(connection, key));
+    await indexFields.reduce((promise, indexName) => {
+      return promise.then(() => this.ensureIndex(connection, indexName));
+    }, Promise.resolve());
+
+    await _.reduce(this.index, (promise, option, indexName) => {
+      return promise.then(() => option === true ?
+        this.ensureIndex(connection, indexName) :
+        this.ensureIndex(connection, indexName, option)
+      );
     }, Promise.resolve());
   }
 
-  async ensureIndex(connection, field) {
-    if (this.pk === field) return;
+  async ensureIndex(connection, indexName, option) {
+    if (this.pk === indexName) return;
     await r.branch(
-      this.query().indexList().contains(field).not(),
-      this.query().indexCreate(field),
+      this.query().indexList().contains(indexName).not(),
+      this.query().indexCreate(indexName, option),
       null
     ).run(connection);
-    await this.query().indexWait(field).run(connection);
+    await this.query().indexWait(indexName).run(connection);
   }
 
   query() {
