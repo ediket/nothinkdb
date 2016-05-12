@@ -206,7 +206,7 @@ export default class Table {
 
       return query;
     }, query);
-    
+
     return r.branch(
       query,
       joinedQuery,
