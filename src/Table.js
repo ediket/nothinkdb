@@ -185,7 +185,7 @@ export default class Table {
   }
 
   withJoin(query, relations) {
-    return _.reduce(relations, (query, relations, key) => {
+    const joinedQuery = _.reduce(relations, (query, relations, key) => {
       if (_.startsWith(key, '_')) return query;
 
       const relation = this.getRelation(key);
@@ -206,6 +206,12 @@ export default class Table {
 
       return query;
     }, query);
+    
+    return r.branch(
+      query,
+      joinedQuery,
+      query
+    );
   }
 
   getRelated(pk, relationName, options = {}) {

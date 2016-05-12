@@ -1048,6 +1048,13 @@ describe('Table', () => {
         });
       });
 
+      it('should handle null query', async () => {
+        let query = r.expr(null);
+        query = await fooTable.withJoin(query, { bar: { baz: true } });
+        const result = await query.run(connection);
+        expect(result).to.be.null;
+      });
+
       it('should query nested relation with empty part', async () => {
         const foo = fooTable.create({});
 
