@@ -208,7 +208,7 @@ export default class Table {
     }, query);
 
     return r.branch(
-      query,
+      query.eq(null).not(),
       joinedQuery,
       query
     );
