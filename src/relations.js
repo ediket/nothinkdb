@@ -198,23 +198,23 @@ export function belongsToMany(link, options = {}) {
       apply = query => query,
     } = parseOptions(options);
 
-    let targetIdsQuery = link1.left.table.query();
-    targetIdsQuery = r.branch(
-      row(link1.right.field),
-      targetIdsQuery.getAll(row(link1.right.field), { index: link1.left.field }),
-      r.expr([]),
-    );
-    targetIdsQuery = targetIdsQuery.hasFields(link2.left.field);
-    targetIdsQuery = apply(targetIdsQuery);
-    targetIdsQuery = targetIdsQuery.map(function(row) { return row(link2.left.field); });
-    targetIdsQuery = targetIdsQuery.coerceTo('array');
+    let targetIdsQuery = relationTable.query()
+      .getAll(row(link1.right.field), { index: link1.left.field })
+      .hasFields(link2.left.field);
 
-    const query = r.branch(
-      targetIdsQuery.count().gt(0),
-      link2.right.table.query().getAll(r.args(targetIdsQuery), { index: link2.right.field }),
+    // filter, orderBy, etc...
+    targetIdsQuery = apply(targetIdsQuery);
+    targetIdsQuery = targetIdsQuery.map(row => row(link2.left.field))
+      .coerceTo('array');
+
+    const relatedRowsQuery = link2.right.table.query()
+      .getAll(r.args(targetIdsQuery), { index: link2.right.field });
+
+    return r.branch(
+      row(link1.right.field),
+      relatedRowsQuery,
       r.expr([]),
     );
-    return query;
   }
 
   function coerceType(query) {

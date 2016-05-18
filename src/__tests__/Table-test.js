@@ -844,6 +844,41 @@ describe('Table', () => {
         expect(fetchedFoos).to.have.length(1);
         expect(foo).to.deep.equal(fetchedFoos[0]);
       });
+
+      it('should use apply option', async () => {
+        const foo = fooTable.create({});
+        const bar1 = barTable.create({ id: 'bar1' });
+        const bar2 = barTable.create({ id: 'bar2' });
+
+        await fooTable.insert(foo).run(connection);
+        await barTable.insert([bar1, bar2]).run(connection);
+        await foobarTable.insert(foobarTable.create({ id: '1', fooId: foo.id, barId: bar1.id })).run(connection);
+        await foobarTable.insert(foobarTable.create({ id: '2', fooId: foo.id, barId: bar2.id })).run(connection);
+
+        const fetchedBars1 = await fooTable.getRelated(foo.id, 'bars', {
+          _apply: query => query.filter({ barId: bar1.id }),
+        }).run(connection);
+        expect(fetchedBars1).to.have.length(1);
+        expect(fetchedBars1[0]).to.deep.equal(bar1);
+
+        const fetchedBars2 = await fooTable.getRelated(foo.id, 'bars', {
+          _apply: query => query.filter({ barId: bar2.id }),
+        }).run(connection);
+        expect(fetchedBars2).to.have.length(1);
+        expect(fetchedBars2[0]).to.deep.equal(bar2);
+
+        const fetchedBars3 = await fooTable.getRelated(foo.id, 'bars', {
+          _apply: query => query.orderBy(r.asc('id')),
+        }).run(connection);
+        expect(fetchedBars3).to.have.length(2);
+        expect(fetchedBars3[0]).to.deep.equal(bar1);
+
+        const fetchedBars4 = await fooTable.getRelated(foo.id, 'bars', {
+          _apply: query => query.orderBy(r.desc('id')),
+        }).run(connection);
+        expect(fetchedBars4).to.have.length(2);
+        expect(fetchedBars4[0]).to.deep.equal(bar1);
+      });
     });
 
     describe('createRelation', () => {
