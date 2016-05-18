@@ -185,11 +185,11 @@ export default class Table {
   }
 
   withJoin(query, relations) {
-    const joinedQuery = _.reduce(relations, (query, relations, key) => {
-      if (_.startsWith(key, '_')) return query;
+    const joinedQuery = query.do(row => row.merge(
+      _.reduce(relations, (joinObject, relations, key) => {
+        if (_.startsWith(key, '_')) return joinObject;
 
-      const relation = this.getRelation(key);
-      query = query.merge(row => {
+        const relation = this.getRelation(key);
         let relatedQuery = relation.query(row, relations);
         relatedQuery = relation.coerceType(relatedQuery);
         relatedQuery = relatedQuery.do(nextQuery => {
@@ -204,11 +204,12 @@ export default class Table {
           return nextQuery;
         });
 
-        return { [key]: relatedQuery };
-      });
-
-      return query;
-    }, query);
+        return {
+          ...joinObject,
+          [key]: relatedQuery,
+        };
+      }, {})
+    ));
 
     return r.branch(
       query.typeOf().eq('NULL').not(),
