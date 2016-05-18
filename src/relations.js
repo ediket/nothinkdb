@@ -82,7 +82,7 @@ export function belongsTo(link) {
     } = parseOptions(options);
 
     let query = right.table.query();
-    query = query.getAll(row(left.field), { index: right.field }),
+    query = query.getAll(row(left.field), { index: right.field });
     query = apply(query);
     return r.branch(
       row(left.field),
