@@ -190,16 +190,19 @@ export default class Table {
 
       const relation = this.getRelation(key);
       query = query.merge(row => {
-        let relatedQuery = relation.coerceType(relation.query(row, relations));
-
-        if (_.isObject(relations)) {
-          const { targetTable } = this.getRelation(key);
-          relatedQuery = r.branch(
-            relatedQuery,
-            targetTable.withJoin(relatedQuery, relations),
-            relatedQuery,
-          );
-        }
+        let relatedQuery = relation.query(row, relations);
+        relatedQuery = relation.coerceType(relatedQuery);
+        relatedQuery = relatedQuery.do(nextQuery => {
+          if (_.isObject(relations)) {
+            const { targetTable } = this.getRelation(key);
+            nextQuery = r.branch(
+              nextQuery,
+              targetTable.withJoin(nextQuery, relations),
+              nextQuery,
+            );
+          }
+          return nextQuery;
+        });
 
         return { [key]: relatedQuery };
       });
@@ -217,13 +220,14 @@ export default class Table {
   getRelated(pk, relationName, options = {}) {
     const relation = this.getRelation(relationName);
     const query = this.queryRelated(pk, relationName, options);
-
     return relation.coerceType(query);
   }
 
   queryRelated(pk, relationName, options = {}) {
     const relation = this.getRelation(relationName);
-    return relation.query(this.get(pk), options);
+    return this.get(pk).do(row => {
+      return relation.query(row, options);
+    });
   }
 
   createRelation(relationName, onePk, otherPk) {

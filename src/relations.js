@@ -23,17 +23,19 @@ export function hasOne(link) {
     } = parseOptions(options);
 
     let query = left.table.query();
-    query = r.branch(
+    query = query.getAll(row(right.field), { index: left.field });
+    query = apply(query);
+
+    return r.branch(
       row(right.field),
-      query.getAll(row(right.field), { index: left.field }),
+      query,
       r.expr([]),
     );
-    query = apply(query);
-    return query;
   }
 
   function coerceType(query) {
-    return r.branch(query.count().gt(0), query.nth(0), null);
+    return query.coerceTo('array')
+      .do(query => r.branch(query.count().gt(0), query.nth(0), null));
   }
 
   function create(onePk, otherPk) {
@@ -80,17 +82,19 @@ export function belongsTo(link) {
     } = parseOptions(options);
 
     let query = right.table.query();
-    query = r.branch(
+    query = query.getAll(row(left.field), { index: right.field }),
+    query = apply(query);
+    return r.branch(
       row(left.field),
-      query.getAll(row(left.field), { index: right.field }),
+      query,
       r.expr([]),
     );
-    query = apply(query);
-    return query;
   }
 
   function coerceType(query) {
-    return r.branch(query.count().gt(0), query.nth(0), null);
+    return query.coerceTo('array').do(
+      rows => r.branch(rows.count().gt(0), rows.nth(0), null)
+    );
   }
 
   function create(onePk, otherPk) {
@@ -137,13 +141,14 @@ export function hasMany(link) {
     } = parseOptions(options);
 
     let query = left.table.query();
-    query = r.branch(
+    query = query.getAll(row(right.field), { index: left.field });
+    query = apply(query);
+
+    return r.branch(
       row(right.field),
-      query.getAll(row(right.field), { index: left.field }),
+      query,
       r.expr([]),
     );
-    query = apply(query);
-    return query;
   }
 
   function coerceType(query) {
