@@ -665,6 +665,19 @@ describe('Table', () => {
         expect(fetchedBars).to.have.length(1);
         expect(bar).to.deep.equal(fetchedBars[0]);
       });
+
+      it('should join SELECTION type query', async () => {
+        const foo = fooTable.create({});
+        const bar = barTable.create({ fooId: foo.id });
+
+        await fooTable.insert(foo).run(connection);
+        await barTable.insert(bar).run(connection);
+
+        let query = fooTable.query().getAll(foo.id);
+        query = fooTable.withJoin(query, { bars: true });
+        const fetchedfoos = await query.coerceTo('array').run(connection);
+        expect(fetchedfoos[0].bars).to.have.length(1);
+      });
     });
 
     describe('createRelation', () => {
@@ -828,8 +841,8 @@ describe('Table', () => {
         query = fooTable.withJoin(query, { bars: true });
         const fetchedfoo = await query.run(connection);
         expect(fetchedfoo.bars).to.have.length(1);
-        expect(bar).to.deep.equal(fetchedfoo.bars[0]);
 
+        expect(bar).to.deep.equal(fetchedfoo.bars[0]);
         const fetchedBars = await fooTable.getRelated(foo.id, 'bars').run(connection);
         expect(fetchedBars).to.have.length(1);
         expect(bar).to.deep.equal(fetchedBars[0]);
@@ -843,6 +856,21 @@ describe('Table', () => {
         const fetchedFoos = await barTable.getRelated(bar.id, 'foos').run(connection);
         expect(fetchedFoos).to.have.length(1);
         expect(foo).to.deep.equal(fetchedFoos[0]);
+      });
+
+      it('should join SELECTION type query', async () => {
+        const foo = fooTable.create({});
+        const bar = barTable.create({});
+        const foobar = foobarTable.create({ fooId: foo.id, barId: bar.id });
+
+        await fooTable.insert(foo).run(connection);
+        await barTable.insert(bar).run(connection);
+        await foobarTable.insert(foobar).run(connection);
+
+        let query = fooTable.query().getAll(foo.id);
+        query = fooTable.withJoin(query, { bars: true });
+        const fetchedfoos = await query.coerceTo('array').run(connection);
+        expect(fetchedfoos[0].bars).to.have.length(1);
       });
 
       it('should use apply option', async () => {

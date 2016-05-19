@@ -185,7 +185,7 @@ export default class Table {
   }
 
   withJoin(query, relations) {
-    const joinedQuery = query.do(row => row.merge(
+    const joinedQuery = query.merge(row =>
       _.reduce(relations, (joinObject, relations, key) => {
         if (_.startsWith(key, '_')) return joinObject;
 
@@ -209,7 +209,7 @@ export default class Table {
           [key]: relatedQuery,
         };
       }, {})
-    ));
+    );
 
     return r.branch(
       query.typeOf().eq('NULL').not(),
