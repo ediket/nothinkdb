@@ -192,17 +192,10 @@ export default class Table {
         const relation = this.getRelation(key);
         let relatedQuery = relation.query(row, relations);
         relatedQuery = relation.coerceType(relatedQuery);
-        relatedQuery = relatedQuery.do(nextQuery => {
-          if (_.isObject(relations)) {
-            const { targetTable } = this.getRelation(key);
-            nextQuery = r.branch(
-              nextQuery,
-              targetTable.withJoin(nextQuery, relations),
-              nextQuery,
-            );
-          }
-          return nextQuery;
-        });
+        if (_.isObject(relations) && !_.isEmpty(relations)) {
+          const { targetTable } = this.getRelation(key);
+          relatedQuery = targetTable.withJoin(relatedQuery, relations);
+        }
 
         return {
           ...joinObject,

@@ -25,7 +25,6 @@ export function hasOne(link) {
     let query = left.table.query();
     query = query.getAll(row(right.field), { index: left.field });
     query = apply(query);
-
     return r.branch(
       row(right.field),
       query,
@@ -34,8 +33,7 @@ export function hasOne(link) {
   }
 
   function coerceType(query) {
-    return query.coerceTo('array')
-      .do(query => r.branch(query.count().gt(0), query.nth(0), null));
+    return query.nth(0).default(null);
   }
 
   function create(onePk, otherPk) {
@@ -92,9 +90,7 @@ export function belongsTo(link) {
   }
 
   function coerceType(query) {
-    return query.coerceTo('array').do(
-      rows => r.branch(rows.count().gt(0), rows.nth(0), null)
-    );
+    return query.nth(0).default(null);
   }
 
   function create(onePk, otherPk) {
