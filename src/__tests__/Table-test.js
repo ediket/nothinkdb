@@ -873,6 +873,16 @@ describe('Table', () => {
         expect(fetchedfoos[0].bars).to.have.length(1);
       });
 
+      it('should join Empty relation', async () => {
+        const foo = fooTable.create({});
+        await fooTable.insert(foo).run(connection);
+
+        let query = fooTable.query().getAll(foo.id);
+        query = fooTable.withJoin(query, { bars: true });
+        const fetchedfoos = await query.coerceTo('array').run(connection);
+        expect(fetchedfoos[0].bars).to.have.length(0);
+      });
+
       it('should use apply option', async () => {
         const foo = fooTable.create({});
         const bar1 = barTable.create({ id: 'bar1' });

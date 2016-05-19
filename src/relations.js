@@ -212,8 +212,14 @@ export function belongsToMany(link, options = {}) {
     targetIdsQuery = targetIdsQuery.map(row => row(link2.left.field))
       .coerceTo('array');
 
-    const relatedRowsQuery = link2.right.table.query()
-      .getAll(r.args(targetIdsQuery), { index: link2.right.field });
+    const relatedRowsQuery = targetIdsQuery.do(targetIds =>
+      r.branch(
+        targetIds.count().gt(0),
+        link2.right.table.query()
+          .getAll(r.args(targetIds), { index: link2.right.field }),
+        r.expr([])
+      )
+    );
 
     return r.branch(
       row(link1.right.field),
