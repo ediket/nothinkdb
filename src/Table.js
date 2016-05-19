@@ -24,7 +24,15 @@ export default class Table {
     this.pk = pk;
     this.schema = schema;
     this.relations = relations;
+    this._relations = null;
     this.index = index;
+  }
+
+  getRelations() {
+    if (!this._relations) {
+      this._relations = this.relations();
+    }
+    return this._relations;
   }
 
   metaFields(metaKey) {
@@ -106,10 +114,11 @@ export default class Table {
     }, Promise.resolve());
 
     await _.reduce(this.index, (promise, option, indexName) => {
-      return promise.then(() => option === true ?
-        this.ensureIndex(connection, indexName) :
-        this.ensureIndex(connection, indexName, option)
-      );
+      return promise.then(() => {
+        return option === true ?
+          this.ensureIndex(connection, indexName) :
+          this.ensureIndex(connection, indexName, option);
+      });
     }, Promise.resolve());
   }
 
@@ -166,7 +175,7 @@ export default class Table {
         if (_.isUndefined(val) || _.isNull(val)) return r.expr(null);
 
         return r.branch(
-          this.query().getAll(val, {index: key}).count().gt(0),
+          this.query().getAll(val, { index: key }).count().gt(0),
           r.error(`"${key}" field is unique in "${this.tableName}" table. { "${key}": "${val}" } already exist.`),
           null
         );
@@ -179,7 +188,7 @@ export default class Table {
   }
 
   getRelation(relation) {
-    const relationObj = this.relations()[relation];
+    const relationObj = this.getRelations()[relation];
     assert.ok(relationObj, `Relation '${this.tableName}.${relation}' is not exist.`);
     return relationObj;
   }
