@@ -17,16 +17,32 @@ export function hasOne(link) {
   assert.equal(link.constructor, Link);
   const { left, right } = link;
 
-  function query(row, options) {
+  function getIndex(rowOrPk) {
+    let index;
+    if (_.isFunction(rowOrPk)) {
+      const row = rowOrPk;
+      index = row(right.field);
+    }
+    else {
+      const pk = rowOrPk;
+      if (right.field === right.table.pk) {
+        index = pk;
+      } else {
+        index = right.table.get(pk)(right.field);
+      }
+    }
+    return index;
+  }
+
+  function query(index, options) {
     const {
       apply = query => query,
     } = parseOptions(options);
 
-    let query = left.table.query();
-    query = query.getAll(row(right.field), { index: left.field });
+    let query = left.table.query().getAll(index, { index: left.field });
     query = apply(query);
     return r.branch(
-      row(right.field),
+      index,
       query,
       r.expr([]),
     );
@@ -64,6 +80,7 @@ export function hasOne(link) {
     create,
     remove,
     has,
+    index: getIndex,
     link,
     targetTable: left.table,
     type: 'hasOne',
@@ -74,16 +91,32 @@ export function belongsTo(link) {
   assert.equal(link.constructor, Link);
   const { left, right } = link;
 
-  function query(row, options = {}) {
+  function getIndex(rowOrPk) {
+    let index;
+    if (_.isFunction(rowOrPk)) {
+      const row = rowOrPk;
+      index = row(left.field);
+    }
+    else {
+      const pk = rowOrPk;
+      if (left.field === left.table.pk) {
+        index = pk;
+      } else {
+        index = left.table.get(pk)(left.field);
+      }
+    }
+    return index;
+  }
+
+  function query(index, options = {}) {
     const {
       apply = query => query,
     } = parseOptions(options);
 
-    let query = right.table.query();
-    query = query.getAll(row(left.field), { index: right.field });
+    let query = right.table.query().getAll(index, { index: right.field });
     query = apply(query);
     return r.branch(
-      row(left.field),
+      index,
       query,
       r.expr([]),
     );
@@ -121,6 +154,7 @@ export function belongsTo(link) {
     create,
     remove,
     has,
+    index: getIndex,
     link,
     targetTable: right.table,
     type: 'belongsTo',
@@ -131,17 +165,34 @@ export function hasMany(link) {
   assert.equal(link.constructor, Link);
   const { left, right } = link;
 
-  function query(row, options = {}) {
+  function getIndex(rowOrPk) {
+    let index;
+    if (_.isFunction(rowOrPk)) {
+      const row = rowOrPk;
+      index = row(right.field);
+    }
+    else {
+      const pk = rowOrPk;
+      if (right.field === right.table.pk) {
+        index = pk;
+      } else {
+        index = right.table.get(pk)(right.field);
+      }
+    }
+    return index;
+  }
+
+  function query(index, options = {}) {
     const {
       apply = query => query,
     } = parseOptions(options);
 
     let query = left.table.query();
-    query = query.getAll(row(right.field), { index: left.field });
+    query = query.getAll(index, { index: left.field });
     query = apply(query);
 
     return r.branch(
-      row(right.field),
+      index,
       query,
       r.expr([]),
     );
@@ -179,6 +230,7 @@ export function hasMany(link) {
     create,
     remove,
     has,
+    index: getIndex,
     link,
     targetTable: left.table,
     type: 'hasMany',
@@ -194,13 +246,30 @@ export function belongsToMany(link, options = {}) {
   const { index } = options;
   const relationTable = link[0].left.table;
 
-  function query(row, options = {}) {
+  function getIndex(rowOrPk) {
+    let index;
+    if (_.isFunction(rowOrPk)) {
+      const row = rowOrPk;
+      index = row(link1.right.field);
+    }
+    else {
+      const pk = rowOrPk;
+      if (link1.right.field === link1.right.table.pk) {
+        index = pk;
+      } else {
+        index = link1.right.table.get(pk)(link1.right.field);
+      }
+    }
+    return index;
+  }
+
+  function query(index, options = {}) {
     const {
       apply = query => query,
     } = parseOptions(options);
 
     let targetIdsQuery = relationTable.query()
-      .getAll(row(link1.right.field), { index: link1.left.field })
+      .getAll(index, { index: link1.left.field })
       .hasFields(link2.left.field);
 
     // filter, orderBy, etc...
@@ -218,7 +287,7 @@ export function belongsToMany(link, options = {}) {
     );
 
     return r.branch(
-      row(link1.right.field),
+      index,
       relatedRowsQuery,
       r.expr([]),
     );
@@ -282,6 +351,7 @@ export function belongsToMany(link, options = {}) {
     create,
     remove,
     has,
+    index: getIndex,
     link,
     targetTable: link2.right.table,
     type: 'belongsToMany',

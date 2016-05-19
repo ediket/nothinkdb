@@ -186,22 +186,23 @@ export default class Table {
 
   withJoin(query, relations) {
     const joinedQuery = query.merge(row =>
-      _.reduce(relations, (joinObject, relations, key) => {
-        if (_.startsWith(key, '_')) return joinObject;
+      _.chain(relations)
+        .omitBy((relations, key) => _.startsWith(key, '_'))
+        .reduce((joinObject, relations, key) => {
+          let relatedQuery = this.getRelated(row, key);
 
-        const relation = this.getRelation(key);
-        let relatedQuery = relation.query(row, relations);
-        relatedQuery = relation.coerceType(relatedQuery);
-        if (_.isObject(relations) && !_.isEmpty(relations)) {
-          const { targetTable } = this.getRelation(key);
-          relatedQuery = targetTable.withJoin(relatedQuery, relations);
-        }
+          // if nested
+          if (_.isObject(relations) && !_.isEmpty(relations)) {
+            const { targetTable } = this.getRelation(key);
+            relatedQuery = targetTable.withJoin(relatedQuery, relations);
+          }
 
-        return {
-          ...joinObject,
-          [key]: relatedQuery,
-        };
-      }, {})
+          return {
+            ...joinObject,
+            [key]: relatedQuery,
+          };
+        }, {})
+        .value()
     );
 
     return r.branch(
@@ -219,9 +220,8 @@ export default class Table {
 
   queryRelated(pk, relationName, options = {}) {
     const relation = this.getRelation(relationName);
-    return this.get(pk).do(row => {
-      return relation.query(row, options);
-    });
+    const index = relation.index(pk);
+    return relation.query(index, options);
   }
 
   createRelation(relationName, onePk, otherPk) {
