@@ -7,9 +7,9 @@ import Link from './Link';
 function parseOptions(options) {
   return _.chain(options)
     .omitBy((value, key) => !_.startsWith(key, '_'))
-    .reduce((memo, value, key) => {
-      return { [key.slice(1)]: value };
-    }, {})
+    .reduce((memo, value, key) => ({
+      [key.slice(1)]: value,
+    }), {})
     .value();
 }
 
@@ -54,9 +54,9 @@ export function hasOne(link) {
 
   function create(onePk, otherPk) {
     const { left, right } = link;
-    return right.table.get(onePk).do(function(rightRow) {
-      return left.table.update(otherPk, { [left.field]: rightRow(right.field) });
-    });
+    return right.table.get(onePk).do((rightRow) =>
+      left.table.update(otherPk, { [left.field]: rightRow(right.field) })
+    );
   }
 
   function remove(onePk, otherPk) {
@@ -65,13 +65,13 @@ export function hasOne(link) {
   }
 
   function has(onePk, otherPk) {
-    return right.table.get(onePk).do(rightRow => {
-      return left.table.get(otherPk).do(leftRow => {
-        return leftRow.hasFields(left.field).and(
+    return right.table.get(onePk).do(rightRow =>
+      left.table.get(otherPk).do(leftRow =>
+        leftRow.hasFields(left.field).and(
           leftRow(left.field).eq(rightRow(right.field))
-        );
-      });
-    });
+        )
+      )
+    );
   }
 
   return {
@@ -128,9 +128,9 @@ export function belongsTo(link) {
 
   function create(onePk, otherPk) {
     const { left, right } = link;
-    return right.table.get(otherPk).do(function(rightRow) {
-      return left.table.update(onePk, { [left.field]: rightRow(right.field) });
-    });
+    return right.table.get(otherPk).do((rightRow) =>
+      left.table.update(onePk, { [left.field]: rightRow(right.field) })
+    );
   }
 
   function remove(onePk, /* otherPk */) {
@@ -139,13 +139,13 @@ export function belongsTo(link) {
   }
 
   function has(onePk, otherPk) {
-    return right.table.get(otherPk).do(rightRow => {
-      return left.table.get(onePk).do(leftRow => {
-        return leftRow.hasFields(left.field).and(
+    return right.table.get(otherPk).do(rightRow =>
+      left.table.get(onePk).do(leftRow =>
+        leftRow.hasFields(left.field).and(
           leftRow(left.field).eq(rightRow(right.field))
-        );
-      });
-    });
+        )
+      )
+    );
   }
 
   return {
@@ -204,9 +204,9 @@ export function hasMany(link) {
 
   function create(onePk, otherPk) {
     const { left, right } = link;
-    return right.table.get(onePk).do(function(rightRow) {
-      return left.table.update(otherPk, { [left.field]: rightRow(right.field) });
-    });
+    return right.table.get(onePk).do((rightRow) =>
+      left.table.update(otherPk, { [left.field]: rightRow(right.field) })
+    );
   }
 
   function remove(onePk, otherPk) {
@@ -215,13 +215,13 @@ export function hasMany(link) {
   }
 
   function has(onePk, otherPk) {
-    return right.table.get(onePk).do(rightRow => {
-      return left.table.get(otherPk).do(leftRow => {
-        return leftRow.hasFields(left.field).and(
+    return right.table.get(onePk).do(rightRow =>
+      left.table.get(otherPk).do(leftRow =>
+        leftRow.hasFields(left.field).and(
           leftRow(left.field).eq(rightRow(right.field))
-        );
-      });
-    });
+        )
+      )
+    );
   }
 
   return {
