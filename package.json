@@ -1,6 +1,6 @@
 {
   "name": "nothinkdb",
-  "version": "0.5.27",
+  "version": "0.5.28",
   "description": "Functional toolkit for rethinkdb",
   "main": "lib/nothinkdb.js",
   "files": [
@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "babel-runtime": "^6.9.0",
+    "core-decorators": "^0.12.2",
     "debug": "^2.2.0",
     "joi": "^7.2.3",
     "lodash": "^4.5.1",

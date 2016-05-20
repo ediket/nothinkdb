@@ -2,6 +2,9 @@
 
 - [Table](#Table)
   - [`constructor(options)`](#Table-constructor)
+  - [`init()`](#Table-init)
+  - [`getSchema()`](#Table-getSchema)
+  - [`getRelations()`](#Table-getRelations)
   - [`validate(data)`](#Table-validate)
   - [`create(data)` - aliases: `attempt`](#Table-create)
   - [`hasField(fieldName)`](#Table-hasField)
@@ -17,11 +20,12 @@
   - [`update(pk, data)`](#Table-update)
   - [`delete(pk)`](#Table-delete)
   - [`getRelation(relationName)`](#Table-getRelation)
+  - [`withJoin(query, relations)`](#Table-withJoin)
+  - [`getRelated(pk, relationName, options = {})`](#Table-getRelated)
+  - [`queryRelated(pk, relationName, options = {})`](#Table-queryRelated)
   - [`createRelation(relationName, onePk, otherPk)`](#Table-createRelation)
   - [`removeRelation(relationName, onePk, otherPk)`](#Table-removeRelation)
   - [`hasRelation(relationName, onePk, otherPk)`](#Table-hasRelation)
-  - [`withJoin(query, relations)`](#Table-withJoin)
-  - [`getRelated(pk, relationName)`](#Table-getRelated)
 - [schema](#schema)
 - [relations](#relations)
   - [`hasOne(link)`](#relations-hasOne)
@@ -30,6 +34,7 @@
   - [`belongsToMany(links)`](#relations-belongsToMany)
 - [Environment](#Environment)
   - [`constructor(options)`](#Environment-constructor)
+  - [`init()`](#Environment-init)
   - [`createTable(options)`](#Environment-createTable)
   - [`getTable(tableName)`](#Environment-getTable)
   - [`hasTable(tableName)`](#Environment-hasTable)
@@ -58,6 +63,31 @@ const fooTable = new Table({
     foo: Joi.string().default('bar'),
   }),
 })
+```
+
+### `init()` <a name="Table-init"></a>
+### `getSchema()` <a name="Table-getSchema"></a>
+### `getRelations()` <a name="Table-getRelations"></a>
+
+```js
+import { Table } from 'nothinkdb';
+import Joi from 'joi';
+
+const fooTable = new Table({
+  tableName: 'foo',
+  schema: () => ({
+    id: Joi.string().max(36).default(() => uuid.v4(), 'primary key').meta({ index: true }),
+    name: Joi.string().required().meta({ unique: true }),
+    foo: Joi.string().default('bar'),
+  }),
+  relations: () => ({}),
+});
+
+fooTable.init();  // create internal cache for optimization.
+
+fooTable.getSchema();  // return schema of fooTable. { id: ..., name: ..., foo: ... }
+
+fooTable.getRelations();  // return relations of fooTable. {}
 ```
 
 ### `validate(data)` <a name="Table-validate"></a>
@@ -247,14 +277,13 @@ await fooTable.get(foo.id).run(connection);  // returns null
 
 ### `getRelation(relationName)` <a name="Table-getRelation"></a>
 
-### `createRelation(relationName, onePk, otherPk)` <a name="Table-createRelation"></a>
-
-### `removeRelation(relationName, onePk, otherPk)` <a name="Table-removeRelation"></a>
-
-### `hasRelation(relationName, onePk, otherPk)` <a name="Table-hasRelation"></a>
-
 ### `withJoin(query, relations)` <a name="Table-withJoin"></a>
 ### `getRelated(pk, relationName)` <a name="Table-getRelated"></a>
+### `queryRelated(pk, relationName)` <a name="Table-queryRelated"></a>
+
+### `createRelation(relationName, onePk, otherPk)` <a name="Table-createRelation"></a>
+### `removeRelation(relationName, onePk, otherPk)` <a name="Table-removeRelation"></a>
+### `hasRelation(relationName, onePk, otherPk)` <a name="Table-hasRelation"></a>
 
 ```js
 import { Table, hasOne } from 'nothinkdb';
@@ -489,6 +518,7 @@ const foobarTable = new Table({
 - `options`
   - `Table` - `Table` - the nothinkdb `Table` class.
 
+### `init()` <a name="Environment-init"></a>
 ### `createTable(options)` <a name="Environment-createTable"></a>
 
 - `options` - `object` - same as [Table constructor](#Table-constructor) options.
@@ -522,6 +552,8 @@ const fooTable = env.createTable({
   tableName: 'foo',
   schema: () => ({}),
 });
+
+env.init();  // create internal cache for optimization.
 
 fooTable.constructor === BaseTable;  // true
 

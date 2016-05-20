@@ -18,36 +18,44 @@ export default class Table {
       relations: Joi.func().default(() => () => ({}), 'relation'),
       index: Joi.object().default({}, 'index'),
     });
-    // assert.equal(_.has(schema(), pk), true, `'${pk}' is not specified in schema`);
 
     this.tableName = tableName;
     this.pk = pk;
     this.schema = schema;
+    this._schema = null;
     this.relations = relations;
     this._relations = null;
     this.index = index;
   }
 
+  init() {
+    this._schema = this.schema();
+    this._relations = this.relations();
+  }
+
+  getSchema() {
+    if (!this._schema) this.init();
+    return this._schema;
+  }
+
   getRelations() {
-    if (!this._relations) {
-      this._relations = this.relations();
-    }
+    if (!this._relations) this.init();
     return this._relations;
   }
 
   metaFields(metaKey) {
-    return _.chain(this.schema())
+    return _.chain(this.getSchema())
       .omitBy(schema => !_.find(schema._meta, meta => _.has(meta, metaKey)))
       .keys()
       .value();
   }
 
   validate(data = null) {
-    return !Joi.validate(data, this.schema()).error;
+    return !Joi.validate(data, this.getSchema()).error;
   }
 
   attempt(data = null) {
-    return Joi.attempt(data, this.schema());
+    return Joi.attempt(data, this.getSchema());
   }
 
   create(data = null) {
@@ -55,7 +63,7 @@ export default class Table {
   }
 
   hasField(fieldName) {
-    return _.has(this.schema(), fieldName);
+    return _.has(this.getSchema(), fieldName);
   }
 
   assertField(fieldName) {
@@ -64,7 +72,7 @@ export default class Table {
 
   getField(fieldName) {
     this.assertField(fieldName);
-    return this.schema()[fieldName];
+    return this.getSchema()[fieldName];
   }
 
   getForeignKey(options = {}) {

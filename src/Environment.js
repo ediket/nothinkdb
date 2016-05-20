@@ -11,6 +11,10 @@ export default class Environment {
     this.tables = {};
   }
 
+  init() {
+    _.each(this.tables, table => table.init());
+  }
+
   createTable(options) {
     const { tableName } = options;
 

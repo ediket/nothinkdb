@@ -29,10 +29,11 @@ describe('Table', () => {
           name: Joi.string().default('hello'),
         }),
       });
-      expect(baseTable.schema()).to.have.property('id');
-      expect(baseTable.schema()).to.have.property('createdAt');
-      expect(baseTable.schema()).to.have.property('updatedAt');
-      expect(baseTable.schema()).to.have.property('name');
+      const baseTableSchema = baseTable.getSchema()
+      expect(baseTableSchema).to.have.property('id');
+      expect(baseTableSchema).to.have.property('createdAt');
+      expect(baseTableSchema).to.have.property('updatedAt');
+      expect(baseTableSchema).to.have.property('name');
     });
   });
 
