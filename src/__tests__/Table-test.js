@@ -29,7 +29,7 @@ describe('Table', () => {
           name: Joi.string().default('hello'),
         }),
       });
-      const baseTableSchema = baseTable.getSchema()
+      const baseTableSchema = baseTable.getSchema();
       expect(baseTableSchema).to.have.property('id');
       expect(baseTableSchema).to.have.property('createdAt');
       expect(baseTableSchema).to.have.property('updatedAt');
