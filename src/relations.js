@@ -20,8 +20,11 @@ export function hasOne(link) {
   function getIndex(rowOrPk) {
     let index;
     if (_.isFunction(rowOrPk)) {
-      const row = rowOrPk;
-      index = row(right.field);
+      index = r.branch(
+        rowOrPk.typeOf().eq('STRING'),
+        rowOrPk,
+        rowOrPk(right.field)
+      );
     }
     else {
       const pk = rowOrPk;
@@ -94,8 +97,11 @@ export function belongsTo(link) {
   function getIndex(rowOrPk) {
     let index;
     if (_.isFunction(rowOrPk)) {
-      const row = rowOrPk;
-      index = row(left.field);
+      index = r.branch(
+        rowOrPk.typeOf().eq('STRING'),
+        rowOrPk,
+        rowOrPk(left.field)
+      );
     }
     else {
       const pk = rowOrPk;
@@ -168,8 +174,11 @@ export function hasMany(link) {
   function getIndex(rowOrPk) {
     let index;
     if (_.isFunction(rowOrPk)) {
-      const row = rowOrPk;
-      index = row(right.field);
+      index = r.branch(
+        rowOrPk.typeOf().eq('STRING'),
+        rowOrPk,
+        rowOrPk(right.field)
+      );
     }
     else {
       const pk = rowOrPk;
@@ -249,8 +258,11 @@ export function belongsToMany(link, options = {}) {
   function getIndex(rowOrPk) {
     let index;
     if (_.isFunction(rowOrPk)) {
-      const row = rowOrPk;
-      index = row(link1.right.field);
+      index = r.branch(
+        rowOrPk.typeOf().eq('STRING'),
+        rowOrPk,
+        rowOrPk(link1.right.field)
+      );
     }
     else {
       const pk = rowOrPk;
