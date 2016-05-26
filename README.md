@@ -30,7 +30,7 @@ import r from 'rethinkdb';
 import { Table, schema } from 'nothinkdb';
 
 const userTable = new Table({
-  table: 'user',
+  tableName: 'user',
   schema: () => ({
     id: schema.id,
     name: Joi.string().required(),
