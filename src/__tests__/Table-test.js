@@ -248,7 +248,7 @@ describe('Table', () => {
     });
   });
 
-  describe.skip('sync', () => {
+  describe('sync', () => {
     it('should ensure table & ensure index', async () => {
       await r.branch(r.tableList().contains('oneTable'), r.tableDrop('oneTable'), null).run(connection);
       await r.branch(r.tableList().contains('otherTable'), r.tableDrop('otherTable'), null).run(connection);
