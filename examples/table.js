@@ -3,7 +3,7 @@ import Joi from 'joi';
 import { Table, schema } from '../';
 
 const userTable = new Table({
-  table: 'user',
+  tableName: 'user',
   schema: () => ({
     id: schema.id,
     name: Joi.string().required(),

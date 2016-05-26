@@ -4,7 +4,7 @@ import { Table, schema, belongsToMany } from '../';
 import Joi from 'joi';
 
 const userTable = new Table({
-  table: 'user',
+  tableName: 'user',
   schema: () => ({
     ...schema,
     name: Joi.string().required(),
@@ -21,7 +21,7 @@ const userTable = new Table({
   }),
 });
 const followingTable = new Table({
-  table: 'following',
+  tableName: 'following',
   schema: () => ({
     ...Table.schema,
     followerId: userTable.getForeignKey({ isManyToMany: true }),
