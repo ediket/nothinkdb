@@ -19,7 +19,10 @@
   },
   "keywords": [
     "rethinkdb",
-    "orm"
+    "nothinkdb",
+    "functional",
+    "graphql",
+    "relay"
   ],
   "author": "ironhee <leechulhee95@gmail.com>",
   "license": "MIT",

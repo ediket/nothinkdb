@@ -6,12 +6,15 @@ Functional toolkit for [rethinkdb](https://www.rethinkdb.com/api/javascript/).
 
 Currently, Compitable with rethinkdb 2.2.x
 
+- define declarative table schema.
 - handle schema validation with [joi](https://github.com/hapijs/joi).
 - handle default fields like `id`, `createdAt`, `updatedAt`.
-- fully customizable 1-n, 1-1, n-1, n-m relations. (create, remove, join).
 - ensure table, secondary index.
 - ensure unique field.
+- fully customizable 1-n, 1-1, n-1, n-m relations.
+- __define__, __create__, __remove__, __check__, __query__, __join__ relations.
 - many useful query generator.
+- easily implement graphql server with [nothinkdb-graphql](https://github.com/ediket/nothinkdb-graphql)
 
 ## Install
 
