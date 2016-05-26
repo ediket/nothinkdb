@@ -4,6 +4,8 @@
 
 Functional toolkit for [rethinkdb](https://www.rethinkdb.com/api/javascript/).
 
+Currently, Compitable with rethinkdb 2.2.x
+
 - handle schema validation with [joi](https://github.com/hapijs/joi).
 - handle default fields like `id`, `createdAt`, `updatedAt`.
 - fully customizable 1-n, 1-1, n-1, n-m relations. (create, remove, join).
@@ -21,7 +23,8 @@ npm install -S nothinkdb
 
 ```js
 import Joi from 'joi';
-import { r, Table, schema } from 'nothinkdb';
+import r from 'rethinkdb';
+import { Table, schema } from 'nothinkdb';
 
 const userTable = new Table({
   table: 'user',
@@ -38,6 +41,7 @@ async function run() {
 
   // sync table
   await userTable.sync(connection);
+  await followingTable.sync(connection);
 
   // create user data
   const normalUser = userTable.create({ name: 'user1' });
