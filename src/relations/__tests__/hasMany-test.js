@@ -1,8 +1,8 @@
 import r from 'rethinkdb';
 import { expect } from 'chai';
-import Table from '../../src/Table';
-import schema from '../../src/schema';
-import hasMany from '../../src/relations/hasMany';
+import Table from '../../Table';
+import schema from '../../schema';
+import hasMany from '../hasMany';
 
 
 describe('relation - hasMany', () => {

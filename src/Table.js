@@ -106,20 +106,24 @@ export default class Table {
   }
 
   async sync(connection) {
+    debug(`sync ${connection.db}.${this.tableName}...`);
     await this.ensureTable(connection);
     await this.ensureAllIndexes(connection);
-    debug(`[sync] ${connection.db}.${this.tableName}`);
+    debug(`[done] sync ${connection.db}.${this.tableName}`);
   }
 
   async ensureTable(connection) {
+    debug(`ensureTable ${connection.db}.${this.tableName}...`);
     await r.branch(
       r.tableList().contains(this.tableName).not(),
       r.tableCreate(this.tableName),
       null
     ).run(connection);
+    debug(`[done] ensureTable ${connection.db}.${this.tableName}`);
   }
 
   async ensureAllIndexes(connection) {
+    debug(`ensureAllIndex ${connection.db}.${this.tableName}...`);
     const indexFields = [
       ...this.metaFields('index'),
       ...this.metaFields('unique'),
@@ -136,9 +140,11 @@ export default class Table {
           this.ensureIndex(connection, indexName, option);
       });
     }, Promise.resolve());
+    debug(`[done] ensureAllIndex ${connection.db}.${this.tableName}`);
   }
 
   async ensureIndex(connection, indexName, option) {
+    debug(`ensureIndex ${connection.db}.${this.tableName} ${indexName}...`);
     if (this.pk === indexName) return;
     await r.branch(
       this.query().indexList().contains(indexName).not(),
@@ -146,6 +152,7 @@ export default class Table {
       null
     ).run(connection);
     await this.query().indexWait(indexName).run(connection);
+    debug(`[done] ensureIndex ${connection.db}.${this.tableName} ${indexName}`);
   }
 
   query() {

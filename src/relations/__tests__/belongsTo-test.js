@@ -1,11 +1,11 @@
 import r from 'rethinkdb';
 import { expect } from 'chai';
-import Table from '../../src/Table';
-import schema from '../../src/schema';
-import hasOne from '../../src/relations/hasOne';
+import Table from '../../Table';
+import schema from '../../schema';
+import belongsTo from '../belongsTo';
 
 
-describe('relation - hasOne', () => {
+describe('relation - belongsTo', () => {
   let connection;
   let fooTable;
   let barTable;
@@ -18,16 +18,16 @@ describe('relation - hasOne', () => {
       tableName: 'foo',
       schema: () => ({
         ...schema,
+        barId: barTable.getForeignKey(),
       }),
       relations: () => ({
-        bar: hasOne(fooTable.linkedBy(barTable, 'fooId')),
+        bar: belongsTo(fooTable.linkTo(barTable, 'barId')),
       }),
     });
     barTable = new Table({
       tableName: 'bar',
       schema: () => ({
         ...schema,
-        fooId: fooTable.getForeignKey(),
       }),
     });
     await fooTable.sync(connection);
@@ -38,16 +38,16 @@ describe('relation - hasOne', () => {
     await connection.close();
   });
 
-  describe('withJoin & getRelated', async () => {
+  describe('withJoin & getRelated', () => {
     it('should query relation', async () => {
-      const foo = fooTable.create({});
-      const bar = barTable.create({ fooId: foo.id });
+      const bar = barTable.create({});
+      const foo = fooTable.create({ barId: bar.id });
 
       await fooTable.insert(foo).run(connection);
       await barTable.insert(bar).run(connection);
 
       let query = fooTable.get(foo.id);
-      query = await fooTable.withJoin(query, { bar: true });
+      query = fooTable.withJoin(query, { bar: true });
       const fetchedfoo = await query.run(connection);
       expect(bar).to.deep.equal(fetchedfoo.bar);
 
@@ -56,10 +56,10 @@ describe('relation - hasOne', () => {
     });
   });
 
-  describe('createRelation', async () => {
+  describe('createRelation', () => {
     it('should add relation', async () => {
-      const foo = fooTable.create({});
       const bar = barTable.create({});
+      const foo = fooTable.create({});
 
       await fooTable.insert(foo).run(connection);
       await barTable.insert(bar).run(connection);
@@ -71,10 +71,10 @@ describe('relation - hasOne', () => {
     });
   });
 
-  describe('removeRelation', async () => {
+  describe('removeRelation', () => {
     it('should remove relation', async () => {
-      const foo = fooTable.create({});
       const bar = barTable.create({});
+      const foo = fooTable.create({});
 
       await fooTable.insert(foo).run(connection);
       await barTable.insert(bar).run(connection);

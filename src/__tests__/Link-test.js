@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import Joi from 'joi';
-import Table from '../src/Table';
-import Link from '../src/Link';
+import Table from '../Table';
+import Link from '../Link';
 
 
 describe('Link', () => {

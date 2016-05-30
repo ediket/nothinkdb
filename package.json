@@ -7,7 +7,7 @@
     "lib"
   ],
   "scripts": {
-    "test": "mocha --compilers js:babel-register --timeout 20000",
+    "test": "mocha --compilers js:babel-register --timeout 20000 --recursive src/",
     "build": "babel -d lib src",
     "clean": "rimraf lib",
     "lint": "eslint src",

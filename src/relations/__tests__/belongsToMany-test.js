@@ -1,8 +1,8 @@
 import r from 'rethinkdb';
 import { expect } from 'chai';
-import Table from '../../src/Table';
-import schema from '../../src/schema';
-import belongsToMany from '../../src/relations/belongsToMany';
+import Table from '../../Table';
+import schema from '../../schema';
+import belongsToMany from '../belongsToMany';
 
 
 describe('relation - belongsToMany', () => {

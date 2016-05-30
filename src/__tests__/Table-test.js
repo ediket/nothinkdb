@@ -2,10 +2,10 @@ import r from 'rethinkdb';
 import Joi from 'joi';
 import uuid from 'node-uuid';
 import { expect } from 'chai';
-import Table from '../src/Table';
-import schema from '../src/schema';
-import Link from '../src/Link';
-import hasOne from '../src/relations/hasOne';
+import Table from '../Table';
+import schema from '../schema';
+import Link from '../Link';
+import hasOne from '../relations/hasOne';
 
 
 describe('Table', () => {
