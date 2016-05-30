@@ -6,6 +6,14 @@ import assert from 'assert';
 import Link from './Link';
 const debug = require('debug')('nothinkdb');
 
+function parseRelationOptions(options) {
+  return _.chain(options)
+    .omitBy((value, key) => !_.startsWith(key, '_'))
+    .reduce((memo, value, key) => ({
+      [key.slice(1)]: value,
+    }), {})
+    .value();
+}
 
 export default class Table {
   static pk = 'id';
@@ -238,7 +246,7 @@ export default class Table {
   queryRelated(pk, relationName, options = {}) {
     const relation = this.getRelation(relationName);
     const index = relation.index(pk);
-    return relation.query(index, options);
+    return relation.query(index, parseRelationOptions(options));
   }
 
   createRelation(relationName, onePk, otherPk) {

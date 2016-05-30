@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import r from 'rethinkdb';
-import Table from '../Table';
-import schema from '../schema';
-import Environment from '../Environment';
+import Table from '../src/Table';
+import schema from '../src/schema';
+import Environment from '../src/Environment';
 
 
 describe('Environment', () => {

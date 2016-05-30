@@ -1,14 +1,14 @@
 {
   "name": "nothinkdb",
-  "version": "0.5.29",
+  "version": "0.5.30",
   "description": "Functional toolkit for rethinkdb",
-  "main": "lib/nothinkdb.js",
+  "main": "lib",
   "files": [
     "lib"
   ],
   "scripts": {
-    "test": "mocha --compilers js:babel-register --timeout 20000 ./src/**/__tests__/*-test.js",
-    "build": "babel --ignore *-test.js -d lib src && babel -d lib lib",
+    "test": "mocha --compilers js:babel-register --timeout 20000",
+    "build": "babel -d lib src",
     "clean": "rimraf lib",
     "lint": "eslint src",
     "prepublish": "npm run clean && npm run build"
@@ -45,7 +45,7 @@
     "eslint": "^2.10.2",
     "eslint-config-airbnb": "^9.0.1",
     "eslint-plugin-import": "^1.8.0",
-    "mocha": "^2.4.5",
+    "mocha": "^2.5.3",
     "rethinkdb": "2.2.3",
     "rimraf": "^2.5.1"
   },
