@@ -1,6 +1,7 @@
 /* eslint no-shadow: 0 */
 import _ from 'lodash';
 import _Table from './Table';
+import mapSeries from 'promise-map-series';
 const debug = require('debug')('nothinkdb:Environment');
 
 
@@ -41,17 +42,15 @@ export default class Environment {
   }
 
   async sync(connection) {
-    await Promise.all(
-      _.map(this.tables, async table => {
-        if (_.isFunction(connection)) {
-          await connection().then(async connection => {
-            await table.sync(connection);
-            await connection.close();
-          });
-        } else {
+    await mapSeries(this.tables, async table => {
+      if (_.isFunction(connection)) {
+        await connection().then(async connection => {
           await table.sync(connection);
-        }
-      })
-    );
+          await connection.close();
+        });
+      } else {
+        await table.sync(connection);
+      }
+    });
   }
 }
