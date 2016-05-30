@@ -1,6 +1,6 @@
 {
   "name": "nothinkdb",
-  "version": "0.5.30",
+  "version": "0.5.31",
   "description": "Functional toolkit for rethinkdb",
   "main": "lib",
   "files": [
@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "test": "mocha --compilers js:babel-register --timeout 20000 --recursive src/",
-    "build": "babel -d lib src",
+    "build": "babel --ignore *-test.js -d lib src",
     "clean": "rimraf lib",
     "lint": "eslint src",
     "prepublish": "npm run clean && npm run build"
