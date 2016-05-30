@@ -42,12 +42,11 @@ export default class Environment {
   }
 
   async sync(connection) {
-    await mapSeries(this.tables, async table => {
+    await mapSeries(_.values(this.tables), async table => {
       if (_.isFunction(connection)) {
-        await connection().then(async connection => {
-          await table.sync(connection);
-          await connection.close();
-        });
+        const connection = await connection();
+        await table.sync(connection);
+        await connection.close();
       } else {
         await table.sync(connection);
       }
