@@ -69,21 +69,22 @@ export default function belongsToMany(link, options = {}) {
   }
 
   function create(onePk, otherPk) {
-    let relation;
     if (_.isArray(otherPk)) {
-      relation = otherPk.map(otherPk =>
+      return r.expr(
+        otherPk.map(otherPk => create(onePk, otherPk))
+      );
+    }
+
+    return r.branch(
+      queryRelation(onePk, otherPk).count().gt(0).not(),
+      relationTable.insert(
         relationTable.create({
           [link1.left.field]: onePk,
           [link2.left.field]: otherPk,
-        })
-      );
-    } else {
-      relation = relationTable.create({
-        [link1.left.field]: onePk,
-        [link2.left.field]: otherPk,
-      });
-    }
-    return relationTable.insert(relation, { conflict: 'replace' });
+        }),
+      ),
+      null
+    );
   }
 
   function queryRelation(onePk, otherPk) {

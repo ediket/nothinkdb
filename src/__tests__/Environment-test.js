@@ -124,7 +124,7 @@ describe('Environment', () => {
     });
   });
 
-  describe.only('sync', () => {
+  describe('sync', () => {
     before(async () => {
       await r.branch(r.tableList().contains('foo'), r.tableDrop('foo'), null).run(connection);
     });

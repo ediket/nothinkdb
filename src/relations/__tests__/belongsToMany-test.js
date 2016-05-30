@@ -198,6 +198,24 @@ describe('relation - belongsToMany', () => {
       expect(fetchedFoos[0]).to.have.property('id', foo.id);
     });
 
+    it('should not create duplicated row', async () => {
+      const foo = fooTable.create({});
+      const bar = barTable.create({});
+      await fooTable.insert(foo).run(connection);
+      await barTable.insert(bar).run(connection);
+
+      await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+      await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+
+      const fetchedBars = await fooTable.getRelated(foo.id, 'bars').run(connection);
+      expect(fetchedBars).to.have.length(1);
+      expect(fetchedBars[0]).to.have.property('id', bar.id);
+
+      const fetchedFoos = await barTable.getRelated(bar.id, 'foos').run(connection);
+      expect(fetchedFoos).to.have.length(1);
+      expect(fetchedFoos[0]).to.have.property('id', foo.id);
+    });
+
     it('should add relations with array', async () => {
       const foo = fooTable.create({});
       const bar = barTable.create({});
