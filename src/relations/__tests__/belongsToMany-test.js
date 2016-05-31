@@ -187,7 +187,8 @@ describe('relation - belongsToMany', () => {
       await fooTable.insert(foo).run(connection);
       await barTable.insert(bar).run(connection);
 
-      await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+      const result = await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+      expect(result.inserted).to.equal(1);
 
       const fetchedBars = await fooTable.getRelated(foo.id, 'bars').run(connection);
       expect(fetchedBars).to.have.length(1);
@@ -204,8 +205,10 @@ describe('relation - belongsToMany', () => {
       await fooTable.insert(foo).run(connection);
       await barTable.insert(bar).run(connection);
 
-      await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
-      await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+      const result1 = await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+      expect(result1.inserted).to.equal(1);
+      const result2 = await fooTable.createRelation('bars', foo.id, bar.id).run(connection);
+      expect(result2.inserted).to.equal(0);
 
       const fetchedBars = await fooTable.getRelated(foo.id, 'bars').run(connection);
       expect(fetchedBars).to.have.length(1);

@@ -83,7 +83,14 @@ export default function belongsToMany(link, options = {}) {
           [link2.left.field]: otherPk,
         }),
       ),
-      null
+      r.expr({
+        deleted: 0,
+        errors: 0,
+        inserted: 0,
+        replaced: 0,
+        skipped: 0,
+        unchanged: 0,
+      })
     );
   }
 
