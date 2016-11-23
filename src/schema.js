@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import uuid from 'node-uuid';
+import uuid from 'uuid';
 
 const schema = {
   id: Joi.string().max(36).default(() => uuid.v4(), 'primary key').meta({ index: true }),

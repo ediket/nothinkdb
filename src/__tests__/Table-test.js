@@ -1,6 +1,6 @@
 import r from 'rethinkdb';
 import Joi from 'joi';
-import uuid from 'node-uuid';
+import uuid from 'uuid';
 import { expect } from 'chai';
 import Table from '../Table';
 import schema from '../schema';

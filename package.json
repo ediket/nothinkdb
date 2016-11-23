@@ -54,7 +54,7 @@
     "debug": "^2.2.0",
     "joi": "^7.2.3",
     "lodash": "^4.5.1",
-    "node-uuid": "^1.4.7",
-    "promise-map-series": "^0.2.2"
+    "promise-map-series": "^0.2.2",
+    "uuid": "^3.0.0"
   }
 }
